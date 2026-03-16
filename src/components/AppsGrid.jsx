@@ -16,7 +16,7 @@ export default function AppsGrid() {
             What I&apos;ve built
           </h2>
           <p className="text-[#888888] mb-12 max-w-lg">
-            Each app starts as a real problem worth solving — then gets built, shipped, and shared.
+            Each app starts as a real problem worth solving, then gets built, shipped, and shared.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

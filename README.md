@@ -1,16 +1,36 @@
-# React + Vite
+# batch-apps.com
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal portfolio and app showcase landing page for the Batch Apps brand, built to grow as new apps are added. Each app card links to a live tool, displays its tech stack tags, and shows its current status (Live, Beta, or Coming Soon). The site is designed as a single-page scroll experience with no routing, no backend, and no auth.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React** - component-based UI, structured as a single-page scroll app
+- **Vite** - fast dev server and optimized production builds
+- **Tailwind CSS** - utility-first styling with a custom dark design system (background #0a0a0a, accent #3b82f6)
+- **Vercel** - zero-config hosting with automatic deployments on every push to `main`
 
-## React Compiler
+## Run Locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## Add a New App
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Edit `src/data/apps.js` and add an object to the `apps` array:
+
+```js
+{
+  name: "AppName",
+  description: "What it does.",
+  icon: "🔧",
+  status: "Live",          // "Live" | "Beta" | "Coming Soon"
+  url: "https://...",
+  tags: ["React", "Supabase"],
+}
+```
+
+## Deployment
+
+Pushing to `main` triggers an automatic deploy on Vercel. The live site is at [batch-apps.com](https://batch-apps.com).

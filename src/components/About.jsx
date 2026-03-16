@@ -25,7 +25,7 @@ export default function About() {
             <div>
               <p className="text-[#888888] leading-relaxed text-base mb-4">
                 I&apos;m a developer building practical tools under the Batch Apps umbrella.
-                Each app starts as a personal problem worth solving — then gets built, shipped, and shared.
+                Each app starts as a personal problem worth solving, then gets built, shipped, and shared.
               </p>
               <p className="text-[#888888] leading-relaxed text-base">
                 The goal isn&apos;t perfection on day one. It&apos;s getting useful things into the world and making them better over time.

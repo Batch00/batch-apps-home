@@ -1,17 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
 
   const links = [
-    { label: "About", href: "#about" },
-    { label: "Apps", href: "#apps" },
-    { label: "Contact", href: "#contact" },
+    { label: "About", href: "#about", id: "about" },
+    { label: "Apps", href: "#apps", id: "apps" },
+    { label: "Contact", href: "#contact", id: "contact" },
   ];
+
+  useEffect(() => {
+    const sectionIds = ["about", "apps", "contact"];
+    const observers = [];
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setActiveSection(id);
+          }
+        },
+        { threshold: 0.3 }
+      );
+
+      observer.observe(el);
+      observers.push(observer);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#1f1f1f]">
+      {/* Electric blue top border line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#3b82f6]" />
+
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2 group">
@@ -27,7 +55,11 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm text-[#888888] hover:text-[#f5f5f5] transition-colors"
+              className={`text-sm transition-colors ${
+                activeSection === link.id
+                  ? "text-[#3b82f6]"
+                  : "text-[#888888] hover:text-[#f5f5f5]"
+              }`}
             >
               {link.label}
             </a>
@@ -53,7 +85,11 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="text-sm text-[#888888] hover:text-[#f5f5f5] transition-colors py-1"
+                className={`text-sm transition-colors py-1 ${
+                  activeSection === link.id
+                    ? "text-[#3b82f6]"
+                    : "text-[#888888] hover:text-[#f5f5f5]"
+                }`}
               >
                 {link.label}
               </a>

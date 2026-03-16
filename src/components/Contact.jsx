@@ -4,9 +4,9 @@ import { useFadeIn } from "../hooks/useFadeIn";
 const links = [
   {
     label: "Email",
-    href: "mailto:noreply@batch-apps.com",
+    href: "mailto:carsonb1723@gmail.com",
     icon: Mail,
-    display: "noreply@batch-apps.com",
+    display: "carsonb1723@gmail.com",
   },
   {
     label: "GitHub",
