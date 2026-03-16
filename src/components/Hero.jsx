@@ -15,7 +15,7 @@ export default function Hero() {
       <div ref={ref} className="fade-in-section relative z-10 text-center px-6 max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#222222] bg-[#111111] text-xs text-[#888888] mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
-          Building in public
+          One batch at a time
         </div>
 
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[#f5f5f5] leading-[1.1] tracking-tight mb-6">
