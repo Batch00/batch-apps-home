@@ -23,12 +23,10 @@ export default function About() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
             {/* Bio */}
             <div>
-              <p className="text-[#888888] leading-relaxed text-base mb-4">
-                I&apos;m a developer building practical tools under the Batch Apps umbrella.
-                Each app starts as a personal problem worth solving, then gets built, shipped, and shared.
-              </p>
               <p className="text-[#888888] leading-relaxed text-base">
-                The goal isn&apos;t perfection on day one. It&apos;s getting useful things into the world and making them better over time.
+                I spend my days in data and analytics. I spend my evenings building. Batch Apps
+                is the output - a growing set of tools I made because I wanted them to exist,
+                each one a chance to learn something new and ship something real.
               </p>
             </div>
 
