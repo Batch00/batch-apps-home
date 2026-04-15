@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         apikey: serviceRoleKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, data: {}, redirect_to: "https://www.batch-apps.com/setup-password" }),
     });
 
     if (!inviteRes.ok) {
