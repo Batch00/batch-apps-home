@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const { email, name } = req.query;
 
   if (!email || !name) {
