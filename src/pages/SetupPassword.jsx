@@ -7,8 +7,7 @@ const LIVE_APPS = [
 ];
 
 export default function SetupPassword() {
-  const [sessionReady, setSessionReady] = useState(false);
-  const [invalidLink, setInvalidLink] = useState(false);
+  const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -17,29 +16,24 @@ export default function SetupPassword() {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (!hash) {
-      setInvalidLink(true);
-      return;
-    }
-
-    const params = new URLSearchParams(hash.replace("#", ""));
+    const params = new URLSearchParams(hash.substring(1));
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
+    const type = params.get("type");
 
-    if (!accessToken) {
-      setInvalidLink(true);
-      return;
+    if (accessToken && type === "invite") {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) {
+            setError("Invalid or expired invite link.");
+          } else {
+            setReady(true);
+          }
+        });
+    } else {
+      setError("Invalid or expired invite link. Please contact carsonb1723@gmail.com");
     }
-
-    supabase.auth
-      .setSession({ access_token: accessToken, refresh_token: refreshToken || "" })
-      .then(({ error }) => {
-        if (error) {
-          setInvalidLink(true);
-        } else {
-          setSessionReady(true);
-        }
-      });
   }, []);
 
   async function handleSubmit(e) {
@@ -66,22 +60,17 @@ export default function SetupPassword() {
     }
   }
 
-  if (invalidLink) {
+  if (error && !ready) {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <p style={{ color: "#888888", fontSize: "0.95rem", margin: 0 }}>
-            Invalid or expired invite link. Please contact{" "}
-            <a href="mailto:carsonb1723@gmail.com" style={{ color: "#3b82f6" }}>
-              carsonb1723@gmail.com
-            </a>
-          </p>
+          <p style={{ color: "#888888", fontSize: "0.95rem", margin: 0 }}>{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!sessionReady) {
+  if (!ready) {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
