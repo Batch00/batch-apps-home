@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/request-access.js": {},
-    "api/approve-request.js": {},
-    "api/deny-request.js": {}
-  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
