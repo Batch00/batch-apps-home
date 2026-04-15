@@ -54,26 +54,25 @@ function SetupOverlay() {
 
     setLoading(true);
     try {
-      const { supabase } = await import("./lib/supabase");
+      const supabase = (await import("./lib/supabase")).supabase;
+
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
 
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
-      if (sessionError) {
-        setError(sessionError.message);
-        setLoading(false);
-        return;
-      }
+      if (sessionError) throw sessionError;
 
       const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        setError(updateError.message);
-      } else {
-        setSuccess(true);
-      }
+      if (updateError) throw updateError;
+
+      setSuccess(true);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      console.error("Password setup error:", err);
+      setError(err.message || "Something went wrong. Please try again.");
     }
     setLoading(false);
   }
