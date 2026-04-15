@@ -11,8 +11,8 @@ export default async function handler(req, res) {
 
   const encodedEmail = encodeURIComponent(email);
   const encodedName = encodeURIComponent(name);
-  const approveUrl = `https://batch-apps.com/api/approve-request?email=${encodedEmail}&name=${encodedName}`;
-  const denyUrl = `https://batch-apps.com/api/deny-request?email=${encodedEmail}&name=${encodedName}`;
+  const approveUrl = `https://www.batch-apps.com/api/approve-request?email=${encodedEmail}&name=${encodedName}`;
+  const denyUrl = `https://www.batch-apps.com/api/deny-request?email=${encodedEmail}&name=${encodedName}`;
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #222;">
