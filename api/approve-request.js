@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         from: "noreply@batch-apps.com",
         to: email,
         subject: "You have been granted access to Batch Apps",
-        text: `Hi ${name},\n\nYour access request has been approved. Check your inbox for a separate email with a link to set up your password. Once set, you can log in at any Batch Apps product using the same account.\n\n— Batch Apps`,
+        text: `Hi ${name},\n\nYour access request has been approved. Check your inbox for a separate email with a link to set up your password. Once set, you can log in at any Batch Apps product using the same account.\n\n- Batch Apps`,
       }),
     });
 

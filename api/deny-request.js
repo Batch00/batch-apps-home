@@ -16,7 +16,7 @@ export default async function handler(req, res) {
         from: "noreply@batch-apps.com",
         to: email,
         subject: "Batch Apps Access Request",
-        text: `Hi ${name},\n\nThank you for your interest in Batch Apps. Unfortunately we are not accepting new users at this time. Feel free to reach out at carsonb1723@gmail.com if you have any questions.\n\n— Batch Apps`,
+        text: `Hi ${name},\n\nThank you for your interest in Batch Apps. Unfortunately we are not accepting new users at this time. Feel free to reach out at carsonb1723@gmail.com if you have any questions.\n\n- Batch Apps`,
       }),
     });
 
