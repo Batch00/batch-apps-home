@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, Component } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import AppsGrid from "./components/AppsGrid";
@@ -7,12 +7,26 @@ import About from "./components/About";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import BackToTop from "./components/BackToTop";
-import { supabase } from "./lib/supabase";
 
 const LIVE_APPS = [
   { name: "BatchFlow", url: "https://batchflow.batch-apps.com", icon: "💸" },
   { name: "BatchFolio", url: "https://batchfolio.batch-apps.com", icon: "📈" },
 ];
+
+// Error boundary so a crash in SetupOverlay never takes down the main page
+class OverlayErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { crashed: false };
+  }
+  static getDerivedStateFromError() {
+    return { crashed: true };
+  }
+  render() {
+    if (this.state.crashed) return null;
+    return this.props.children;
+  }
+}
 
 function SetupOverlay() {
   const [password, setPassword] = useState("");
@@ -21,8 +35,7 @@ function SetupOverlay() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const hash = window.location.hash;
-  const params = new URLSearchParams(hash.substring(1));
+  const params = new URLSearchParams(window.location.hash.substring(1));
   const accessToken = params.get("access_token");
   const refreshToken = params.get("refresh_token");
 
@@ -40,30 +53,34 @@ function SetupOverlay() {
     }
 
     setLoading(true);
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+    try {
+      const { supabase } = await import("./lib/supabase");
 
-    if (sessionError) {
-      setError(sessionError.message);
-      setLoading(false);
-      return;
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionError) {
+        setError(sessionError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setSuccess(true);
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
     }
-
-    const { error: updateError } = await supabase.auth.updateUser({ password });
     setLoading(false);
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      setSuccess(true);
-    }
   }
 
   if (success) {
     return (
-      <div style={overlay}>
+      <div style={overlayStyle}>
         <div style={card}>
           <h2 style={heading}>You're in.</h2>
           <p style={sub}>Password set successfully. Choose an app to get started:</p>
@@ -81,7 +98,7 @@ function SetupOverlay() {
   }
 
   return (
-    <div style={overlay}>
+    <div style={overlayStyle}>
       <div style={card}>
         <h2 style={heading}>Set up your password</h2>
         <p style={sub}>Choose a password to access Batch Apps.</p>
@@ -92,7 +109,7 @@ function SetupOverlay() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={input}
+            style={inputStyle}
           />
           <input
             type="password"
@@ -100,7 +117,7 @@ function SetupOverlay() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required
-            style={input}
+            style={inputStyle}
           />
           {error && <p style={{ color: "#ef4444", fontSize: "0.875rem", margin: 0 }}>{error}</p>}
           <button type="submit" disabled={loading} style={btn}>
@@ -112,7 +129,7 @@ function SetupOverlay() {
   );
 }
 
-const overlay = {
+const overlayStyle = {
   position: "fixed", inset: 0, backgroundColor: "#0a0a0a",
   display: "flex", alignItems: "center", justifyContent: "center",
   fontFamily: "Inter, sans-serif", padding: "24px", zIndex: 9999,
@@ -123,7 +140,7 @@ const card = {
 };
 const heading = { color: "#f5f5f5", fontSize: "1.5rem", fontWeight: 700, margin: "0 0 8px" };
 const sub = { color: "#888888", fontSize: "0.95rem", marginBottom: "24px" };
-const input = {
+const inputStyle = {
   backgroundColor: "#0a0a0a", border: "1px solid #222222", borderRadius: "8px",
   color: "#f5f5f5", fontSize: "0.95rem", padding: "12px 14px",
   outline: "none", width: "100%", boxSizing: "border-box",
@@ -140,12 +157,21 @@ const appCard = {
 };
 
 export default function App() {
-  const hash = window.location.hash;
-  const isInvite = hash.includes("access_token") && hash.includes("type=invite");
+  let showPasswordSetup = false;
+  try {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    showPasswordSetup = params.get("type") === "invite" && !!params.get("access_token");
+  } catch (e) {
+    showPasswordSetup = false;
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans">
-      {isInvite && <SetupOverlay />}
+      {showPasswordSetup && (
+        <OverlayErrorBoundary>
+          <SetupOverlay />
+        </OverlayErrorBoundary>
+      )}
       <Navbar />
       <main className="pt-16">
         <Hero />
