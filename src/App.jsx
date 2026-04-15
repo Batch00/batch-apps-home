@@ -12,8 +12,10 @@ const SetupPassword = lazy(() => import("./pages/SetupPassword"));
 
 export default function App() {
   const path = window.location.pathname;
+  const hash = window.location.hash;
+  const isAuthCallback = hash.includes("access_token") && hash.includes("type=invite");
 
-  if (path === "/setup-password") {
+  if (path === "/setup-password" || isAuthCallback) {
     return (
       <Suspense fallback={null}>
         <SetupPassword />
