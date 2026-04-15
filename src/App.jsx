@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import AppsGrid from "./components/AppsGrid";
@@ -6,13 +7,18 @@ import About from "./components/About";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import BackToTop from "./components/BackToTop";
-import SetupPassword from "./pages/SetupPassword";
 
-const isSetupPassword = window.location.pathname === "/setup-password";
+const SetupPassword = lazy(() => import("./pages/SetupPassword"));
 
 export default function App() {
-  if (isSetupPassword) {
-    return <SetupPassword />;
+  const path = window.location.pathname;
+
+  if (path === "/setup-password") {
+    return (
+      <Suspense fallback={null}>
+        <SetupPassword />
+      </Suspense>
+    );
   }
 
   return (
