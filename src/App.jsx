@@ -1,6 +1,7 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import AppsGrid from "./components/AppsGrid";
+import RequestAccess from "./components/RequestAccess";
 import About from "./components/About";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
@@ -13,6 +14,7 @@ export default function App() {
       <main className="pt-16">
         <Hero />
         <AppsGrid />
+        <RequestAccess />
         <About />
         <Contact />
       </main>

@@ -6,13 +6,14 @@ export default function Navbar() {
   const [activeSection, setActiveSection] = useState("");
 
   const links = [
-    { label: "About", href: "#about", id: "about" },
     { label: "Apps", href: "#apps", id: "apps" },
+    { label: "Access", href: "#request-access", id: "request-access" },
+    { label: "About", href: "#about", id: "about" },
     { label: "Contact", href: "#contact", id: "contact" },
   ];
 
   useEffect(() => {
-    const sectionIds = ["about", "apps", "contact"];
+    const sectionIds = ["apps", "request-access", "about", "contact"];
     const observers = [];
 
     sectionIds.forEach((id) => {
