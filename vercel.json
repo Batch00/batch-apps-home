@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/request-access.js": { "runtime": "nodejs20.x" },
+    "api/approve-request.js": { "runtime": "nodejs20.x" },
+    "api/deny-request.js": { "runtime": "nodejs20.x" }
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
