@@ -25,7 +25,7 @@ export default function About() {
             <div>
               <p className="text-[#888888] leading-relaxed text-base">
                 Professionally I work in data. Personally I build things. Batch Apps is where
-                those two overlap — a growing set of tools I made because I wanted them to exist,
+                those two overlap - a growing set of tools I made because I wanted them to exist,
                 each one a chance to learn something new and ship something real.
               </p>
             </div>
