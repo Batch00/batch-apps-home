@@ -1,9 +1,8 @@
 import { useFadeIn } from "../hooks/useFadeIn";
 
 const stats = [
-  { label: "Apps Shipped", value: "2" },
-  { label: "Problems Solved", value: "Real ones" },
-  { label: "Status", value: "Building" },
+  { label: "apps shipped", value: "3" },
+  { label: "stacks learned", value: "3" },
 ];
 
 export default function About() {
@@ -23,10 +22,18 @@ export default function About() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
             {/* Bio */}
             <div>
+              <p className="text-[#888888] leading-relaxed text-base mb-4">
+                By trade, I am a Business Intelligence Analyst with a focus on enterprise
+                reporting, data modeling, and BI development. Day to day that means Power BI,
+                SQL, and Snowflake, translating complex data into dashboards and insights that
+                actually get used.
+              </p>
               <p className="text-[#888888] leading-relaxed text-base">
-                Professionally I work in data. Personally I build things. Batch Apps is where
-                those two overlap - a growing set of tools I made because I wanted them to exist,
-                each one a chance to learn something new and ship something real.
+                Outside of work, I build. Batch Apps is where that analytical mindset meets a
+                personal drive to create things from scratch. Each app starts as a real problem
+                I wanted solved, gets built with whatever stack fits best, and ships when it is
+                ready. The goal is not perfection on day one. It is learning something new with
+                every project and putting useful tools into the world.
               </p>
             </div>
 

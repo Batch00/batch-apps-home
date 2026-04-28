@@ -1,4 +1,4 @@
-import { Mail, Github } from "lucide-react";
+import { Mail, Github, Linkedin } from "lucide-react";
 import { useFadeIn } from "../hooks/useFadeIn";
 
 const links = [
@@ -13,6 +13,12 @@ const links = [
     href: "https://github.com/Batch00",
     icon: Github,
     display: "github.com/Batch00",
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/carson-batchelor/",
+    icon: Linkedin,
+    display: "linkedin.com/in/carson-batchelor",
   },
 ];
 
@@ -38,8 +44,8 @@ export default function Contact() {
               <a
                 key={label}
                 href={href}
-                target={label === "GitHub" ? "_blank" : undefined}
-                rel={label === "GitHub" ? "noopener noreferrer" : undefined}
+                target={label !== "Email" ? "_blank" : undefined}
+                rel={label !== "Email" ? "noopener noreferrer" : undefined}
                 className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-[#111111] border border-[#222222] hover:border-[#3b82f6]/40 hover:bg-[#111111] text-[#888888] hover:text-[#f5f5f5] transition-all group"
               >
                 <Icon

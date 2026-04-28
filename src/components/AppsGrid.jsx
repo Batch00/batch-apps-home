@@ -6,7 +6,7 @@ export default function AppsGrid() {
   const ref = useFadeIn();
 
   return (
-    <section id="apps" className="py-24 px-6">
+    <section id="apps" className="py-24 px-6 border-t border-[#1f1f1f]">
       <div className="max-w-6xl mx-auto">
         <div ref={ref} className="fade-in-section">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-3">
@@ -16,7 +16,7 @@ export default function AppsGrid() {
             What I&apos;ve built
           </h2>
           <p className="text-[#888888] mb-12 max-w-lg">
-            Real problems, built one batch at a time.
+            Built for real use. Shipped one batch at a time.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

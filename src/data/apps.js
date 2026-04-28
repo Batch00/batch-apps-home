@@ -19,7 +19,7 @@ export const apps = [
     name: "BatchBurn",
     description: "A full-stack workout tracking app supporting manual activity logging, Strava OAuth sync, shoe tracking, race logging, and analytics dashboards.",
     icon: "🔥",
-    status: "Coming Soon",
+    status: "Live",
     url: "https://batchburn.batch-apps.com",
     tags: ["Next.js 15", "Supabase", "Tailwind CSS"],
   },
