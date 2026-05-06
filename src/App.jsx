@@ -175,12 +175,12 @@ export default function App() {
       <main className="pt-16">
         <Hero />
         <AppsGrid />
-        <RequestAccess />
         <About />
         <Contact />
       </main>
       <Footer />
       <BackToTop />
+      <RequestAccess />
     </div>
   );
 }
