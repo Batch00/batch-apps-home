@@ -1,11 +1,11 @@
 import { useFadeIn } from "../hooks/useFadeIn";
 
 const analyticsStack = [
-  "Power BI", "SQL", "Snowflake", "DAX", "Power Query", "Excel", "Python", "Data Modeling",
+  "Power BI", "SQL", "Snowflake", "DAX", "Power Query", "Python", "Claude", "AI",
 ];
 
 const builderStack = [
-  "React", "Next.js", "Supabase", "Tailwind", "TypeScript", "Vite", "Vercel", "shadcn/ui",
+  "React", "Next.js", "Supabase", "Tailwind", "TypeScript", "REST APIs", "Vercel", "shadcn/ui",
 ];
 
 function Pills({ items }) {
