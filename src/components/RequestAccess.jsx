@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
-const APP_OPTIONS = ["BatchFlow", "BatchFolio", "BatchBurn"];
+const APP_OPTIONS = ["BatchFlow", "BatchFolio", "BatchBurn", "BatchFlix"];
 
 export default function RequestAccessModal() {
   const [open, setOpen] = useState(false);

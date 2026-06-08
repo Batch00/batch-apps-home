@@ -1,8 +1,8 @@
 import { useFadeIn } from "../hooks/useFadeIn";
 
 const stats = [
-  { label: "apps shipped", value: "3" },
-  { label: "stacks learned", value: "3" },
+  { label: "apps shipped", value: "4" },
+  { label: "stacks learned", value: "4" },
 ];
 
 export default function About() {

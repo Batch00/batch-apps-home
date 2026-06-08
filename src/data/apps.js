@@ -23,4 +23,12 @@ export const apps = [
     url: "https://batchburn.batch-apps.com",
     tags: ["Next.js 15", "Supabase", "Tailwind CSS"],
   },
+  {
+    name: "BatchFlix",
+    description: "Track every movie and TV show you watch. Rate, organize into lists, and explore your viewing stats.",
+    icon: "🎬",
+    status: "Live",
+    url: "https://batchflix.batch-apps.com",
+    tags: ["Next.js", "Supabase", "TMDB API"],
+  },
 ];
