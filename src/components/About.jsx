@@ -1,10 +1,5 @@
 import { useFadeIn } from "../hooks/useFadeIn";
 
-const stats = [
-  { label: "apps shipped", value: "4" },
-  { label: "stacks learned", value: "4" },
-];
-
 export default function About() {
   const ref = useFadeIn();
 
@@ -12,46 +7,99 @@ export default function About() {
     <section id="about" className="py-24 px-6 border-t border-[#1f1f1f]">
       <div className="max-w-6xl mx-auto">
         <div ref={ref} className="fade-in-section">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-3">
-            About
-          </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-[#f5f5f5] mb-12">
-            The person behind it
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-            {/* Bio */}
-            <div>
-              <p className="text-[#888888] leading-relaxed text-base mb-4">
-                By trade, I am a Business Intelligence Analyst with a focus on enterprise
-                reporting, data modeling, and BI development. Day to day that means Power BI,
-                SQL, and Snowflake, translating complex data into dashboards and insights that
-                actually get used.
+          {/* Bento grid */}
+          <div
+            className="grid grid-cols-3"
+            style={{ gap: "10px" }}
+          >
+            {/* Row 1, Card 1 — Identity (span 2) */}
+            <div
+              className="col-span-2 rounded-xl p-8 flex flex-col justify-between"
+              style={{ background: "#0d1b2e", border: "1px solid #162740" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-4">
+                About
               </p>
-              <p className="text-[#888888] leading-relaxed text-base">
-                Outside of work, I build. Batch Apps is where that analytical mindset meets a
-                personal drive to create things from scratch. Each app starts as a real problem
-                I wanted solved, gets built with whatever stack fits best, and ships when it is
-                ready. The goal is not perfection on day one. It is learning something new with
-                every project and putting useful tools into the world.
-              </p>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[#f5f5f5] leading-tight mb-4">
+                  Turning data into insights.{" "}
+                  <br className="hidden sm:block" />
+                  Turning problems into apps.
+                </h2>
+                <p className="text-[#888888] text-[13px] leading-relaxed">
+                  Business Intelligence Analyst by trade. Builder by habit. Each Batch App
+                  started as something I wanted to exist, got built with whatever stack fit
+                  best, and shipped when it was ready.
+                </p>
+              </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-4">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="p-5 rounded-xl bg-[#111111] border border-[#222222]"
-                >
-                  <div className="text-2xl font-bold text-[#f5f5f5] mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-[#888888] uppercase tracking-wider">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
+            {/* Row 1, Card 2 — Apps shipped */}
+            <div
+              className="rounded-xl p-8 flex flex-col items-center justify-center"
+              style={{ background: "#3b82f6", border: "1px solid #3b82f6" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-3">
+                Apps shipped
+              </p>
+              <span
+                className="font-bold text-white leading-none"
+                style={{ fontSize: "42px" }}
+              >
+                4
+              </span>
+            </div>
+
+            {/* Row 2, Card 3 — Analytics stack */}
+            <div
+              className="rounded-xl p-8"
+              style={{ background: "#111111", border: "1px solid #1f1f1f" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-4">
+                Analytics stack
+              </p>
+              <ul className="text-[#888888] text-[14px]" style={{ lineHeight: 2 }}>
+                <li>Power BI</li>
+                <li>SQL</li>
+                <li>Snowflake</li>
+                <li>DAX</li>
+              </ul>
+            </div>
+
+            {/* Row 2, Card 4 — Builder stack */}
+            <div
+              className="rounded-xl p-8"
+              style={{ background: "#111111", border: "1px solid #1f1f1f" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-4">
+                Builder stack
+              </p>
+              <ul className="text-[#888888] text-[14px]" style={{ lineHeight: 2 }}>
+                <li>React</li>
+                <li>Next.js</li>
+                <li>Supabase</li>
+                <li>Tailwind</li>
+              </ul>
+            </div>
+
+            {/* Row 2, Card 5 — Currently planning */}
+            <div
+              className="rounded-xl p-8 flex flex-col justify-between"
+              style={{ background: "#111111", border: "1px solid #1f1f1f" }}
+            >
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-4">
+                  Currently planning
+                </p>
+                <p className="text-[#f5f5f5] font-bold text-[15px] mb-2">TBD</p>
+                <p className="text-[#888888] text-[13px] leading-relaxed">
+                  Travel tracker with world map and trip history
+                </p>
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                <span className="text-[#888888] text-xs">Planning</span>
+              </div>
             </div>
           </div>
         </div>
