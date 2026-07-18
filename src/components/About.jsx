@@ -106,7 +106,7 @@ export default function About() {
                   Apps shipped
                 </p>
                 <span className="font-bold text-white leading-none" style={{ fontSize: "42px" }}>
-                  4
+                  5
                 </span>
               </div>
 
@@ -123,9 +123,9 @@ export default function About() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#3b82f6] mb-3">
                   Currently planning
                 </p>
-                <p className="text-[#f5f5f5] font-bold text-[15px] mb-2">TBD</p>
+                <p className="text-[#f5f5f5] font-bold text-[15px] mb-2">BatchOdds</p>
                 <p className="text-[#888888] text-[13px] leading-relaxed mb-4">
-                  Travel tracker with world map and trip history
+                  Sports bet tracker and prediction models with performance analytics
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />

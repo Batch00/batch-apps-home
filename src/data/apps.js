@@ -31,4 +31,12 @@ export const apps = [
     url: "https://batchflix.batch-apps.com",
     tags: ["Next.js", "Supabase", "TMDB API"],
   },
+  {
+    name: "BatchPort",
+    description: "Travel tracker built on an interactive 3D globe. Log trips, destinations, and experiences, and explore your journeys through stats and maps.",
+    icon: "🌍",
+    status: "Live",
+    url: "https://batchport.batch-apps.com",
+    tags: ["Next.js", "Supabase", "MapLibre", "PostGIS"],
+  },
 ];
