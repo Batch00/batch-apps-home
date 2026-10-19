@@ -108,6 +108,9 @@ export default function About() {
                 <span className="font-bold text-white leading-none" style={{ fontSize: "42px" }}>
                   5
                 </span>
+                <p className="text-xs text-white/70 mt-3 text-center">
+                  + BatchBrain, the AI layer across them
+                </p>
               </div>
 
               {/* Currently planning */}

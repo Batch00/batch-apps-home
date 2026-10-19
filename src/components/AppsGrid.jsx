@@ -1,5 +1,6 @@
 import { apps } from "../data/apps";
 import AppCard from "./AppCard";
+import PlatformCard from "./PlatformCard";
 import { useFadeIn } from "../hooks/useFadeIn";
 
 export default function AppsGrid() {
@@ -18,6 +19,8 @@ export default function AppsGrid() {
           <p className="text-[#888888] mb-12 max-w-lg">
             Built for real use. Shipped one batch at a time.
           </p>
+
+          <PlatformCard />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {apps.map((app) => (

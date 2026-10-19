@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-const statusConfig = {
+export const statusConfig = {
   Live: {
     dot: "bg-green-400",
     text: "text-green-400",

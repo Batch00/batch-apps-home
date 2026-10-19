@@ -40,3 +40,14 @@ export const apps = [
     tags: ["Next.js", "Supabase", "MapLibre", "PostGIS"],
   },
 ];
+
+// Platform layer that sits across the apps above. Rendered by PlatformCard, not AppCard.
+export const platform = {
+  name: "BatchBrain",
+  tagline: "Ask Claude anything across all my apps",
+  description: "An AI layer over BatchFlow, BatchBurn, BatchFlix, BatchFolio and BatchPort: a semantic layer in Postgres plus an MCP server, so Claude can answer plain-English questions from web, desktop or phone.",
+  status: "Live",
+  url: "https://brain.batch-apps.com",
+  tags: ["MCP", "Postgres", "OAuth"],
+  connects: ["BatchFlow", "BatchBurn", "BatchFlix", "BatchFolio", "BatchPort"],
+};
