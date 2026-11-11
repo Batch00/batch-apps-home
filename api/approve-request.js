@@ -1,8 +1,24 @@
-export default async function handler(req, res) {
-  const { email, name } = req.query;
+import process from "node:process";
+import { verifyAccessToken } from "./_lib/access-token.js";
+import { escapeHtml } from "./_lib/escape-html.js";
 
-  if (!email || !name) {
+export default async function handler(req, res) {
+  const { email, name, token } = req.query;
+
+  if (typeof email !== "string" || typeof name !== "string" || !email || !name) {
     return res.status(400).send(htmlPage("Missing required parameters: email and name."));
+  }
+
+  // Nothing is sent until the link's token is verified for this email.
+  let tokenValid;
+  try {
+    tokenValid = verifyAccessToken(email, token);
+  } catch (err) {
+    console.error("Approve request token check failed:", err);
+    return res.status(500).send(htmlPage("Internal server error."));
+  }
+  if (!tokenValid) {
+    return res.status(400).send(htmlPage("This approval link is invalid."));
   }
 
   try {
@@ -23,7 +39,7 @@ export default async function handler(req, res) {
     if (!inviteRes.ok) {
       const error = await inviteRes.text();
       console.error("Supabase invite error:", error);
-      return res.status(500).send(htmlPage(`Failed to invite user: ${error}`));
+      return res.status(500).send(htmlPage("Failed to invite user. Check the server logs."));
     }
 
     // Send confirmation email to requester via Resend
@@ -44,7 +60,7 @@ export default async function handler(req, res) {
     if (!emailRes.ok) {
       const error = await emailRes.text();
       console.error("Resend error:", error);
-      return res.status(500).send(htmlPage(`Invite sent but confirmation email failed: ${error}`));
+      return res.status(500).send(htmlPage("Invite sent but confirmation email failed. Check the server logs."));
     }
 
     return res.status(200).send(
@@ -52,7 +68,7 @@ export default async function handler(req, res) {
     );
   } catch (err) {
     console.error("Approve request error:", err);
-    return res.status(500).send(htmlPage(`Internal server error: ${err.message}`));
+    return res.status(500).send(htmlPage("Internal server error."));
   }
 }
 
@@ -62,7 +78,7 @@ function htmlPage(message, color = "black") {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Batch Apps — Access Request</title>
+  <title>Batch Apps - Access Request</title>
   <style>
     body { font-family: sans-serif; display: flex; justify-content: center; align-items: center;
            min-height: 100vh; margin: 0; background: #f5f5f5; }
@@ -73,7 +89,7 @@ function htmlPage(message, color = "black") {
 </head>
 <body>
   <div class="card">
-    <p>${message}</p>
+    <p>${escapeHtml(message)}</p>
   </div>
 </body>
 </html>`;
