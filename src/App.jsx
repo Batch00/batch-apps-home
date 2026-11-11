@@ -35,10 +35,6 @@ function SetupOverlay() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const params = new URLSearchParams(window.location.hash.substring(1));
-  const accessToken = params.get("access_token");
-  const refreshToken = params.get("refresh_token");
-
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -160,7 +156,7 @@ export default function App() {
   try {
     const params = new URLSearchParams(window.location.hash.substring(1));
     showPasswordSetup = params.get("type") === "invite" && !!params.get("access_token");
-  } catch (e) {
+  } catch {
     showPasswordSetup = false;
   }
 

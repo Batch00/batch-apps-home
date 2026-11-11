@@ -1,6 +1,6 @@
 import { Brain, ExternalLink } from "lucide-react";
 import { apps, platform } from "../data/apps";
-import { statusConfig } from "./AppCard";
+import { statusConfig } from "./statusConfig";
 
 export default function PlatformCard() {
   const status = statusConfig[platform.status] ?? statusConfig["Coming Soon"];
