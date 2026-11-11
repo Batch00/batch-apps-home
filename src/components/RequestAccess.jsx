@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { apps } from "../data/apps";
 
-const APP_OPTIONS = ["BatchFlow", "BatchFolio", "BatchBurn", "BatchFlix"];
+// Every live app in src/data/apps.js. The BatchBrain platform export is not an app.
+const APP_OPTIONS = apps.filter((app) => app.status === "Live").map((app) => app.name);
 
 export default function RequestAccessModal() {
   const [open, setOpen] = useState(false);
