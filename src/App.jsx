@@ -2,6 +2,7 @@ import { useState, Component } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import AppsGrid from "./components/AppsGrid";
+import YtdSection from "./components/YtdSection";
 import RequestAccess from "./components/RequestAccess";
 import About from "./components/About";
 import Contact from "./components/Contact";
@@ -171,6 +172,7 @@ export default function App() {
       <main className="pt-16">
         <Hero />
         <AppsGrid />
+        <YtdSection />
         <About />
         <Contact />
       </main>
