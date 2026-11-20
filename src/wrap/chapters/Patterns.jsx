@@ -1,7 +1,8 @@
 import { Chapter, Frame } from "../components/Chapter";
 import { Reveal } from "../components/motion";
 import { Eyebrow } from "../components/type";
-import { formatNumber, monthInitial, monthName } from "../format";
+import { formatNumber, monthInitial, monthName, pad2 } from "../format";
+import { insights } from "../insights";
 
 const ROWS = [
   { key: "workouts", label: "Workouts" },
@@ -12,6 +13,7 @@ const ROWS = [
 export default function Patterns({ data, meta, state }) {
   const byMonth = new Map((data.monthly ?? []).map((m) => [m.month, m]));
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const lines = insights(data, "patterns");
 
   return (
     <Chapter {...meta}>
@@ -25,7 +27,7 @@ export default function Patterns({ data, meta, state }) {
           </p>
         </Reveal>
 
-        <div className="mt-12 grid max-w-4xl grid-cols-[auto_repeat(12,minmax(0,1fr))] items-center gap-1 sm:gap-2" aria-hidden="true">
+        <div className="mt-10 grid max-w-2xl grid-cols-[auto_repeat(12,minmax(0,1fr))] items-center gap-1 sm:gap-2" aria-hidden="true">
           <span />
           {months.map((month) => (
             <span key={month} className="pb-1 text-center text-caption text-text-muted">
@@ -62,10 +64,22 @@ export default function Patterns({ data, meta, state }) {
         </div>
 
         <Reveal on="enter" at={0.5} delay={900}>
-          <p className="mt-8 max-w-xl text-caption text-secondary">
+          <p className="mt-6 max-w-xl text-caption text-secondary">
             Brighter means busier. Each row is scaled to its own peak, marked in blue.
           </p>
         </Reveal>
+
+        {/* What the grid says, as a short numbered list rather than one more big number. */}
+        {lines.length > 0 && (
+          <ol className="mt-8 grid max-w-5xl gap-x-10 gap-y-5 border-t border-border pt-8 lg:grid-cols-3">
+            {lines.map((line, i) => (
+              <Reveal as="li" key={line.id} at={0.18} delay={i * 160} y={16} className="flex gap-4">
+                <span className="text-caption font-semibold tabular-nums text-accent">{pad2(i + 1)}</span>
+                <span className="text-lede text-text-primary">{line.text}</span>
+              </Reveal>
+            ))}
+          </ol>
+        )}
 
         <div className="sr-only">
           {ROWS.map((row) => (

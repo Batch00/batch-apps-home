@@ -1,113 +1,113 @@
 {
   "year": 2026,
-  "as_of": "2026-11-19",
+  "as_of": "2026-11-20",
   "is_partial": true,
   "version": 1,
   "totals": {
+    "workouts": 131,
+    "active_hours": 134.4,
+    "miles_run": 145,
     "races": 2,
-    "shows": 32,
-    "trips": 1,
-    "movies": 83,
-    "titles": 115,
     "race_prs": 2,
-    "workouts": 129,
-    "countries": 4,
-    "miles_run": 145.0,
+    "titles": 115,
+    "movies": 83,
+    "shows": 32,
     "avg_rating": 4.01,
-    "data_points": 1099,
-    "active_hours": 133.7,
-    "days_traveled": 11,
+    "countries": 4,
     "new_countries": 3,
     "new_us_states": 2,
-    "places_visited": 5
+    "trips": 1,
+    "days_traveled": 11,
+    "places_visited": 5,
+    "data_points": 1114
   },
   "monthly": [
     {
       "month": 1,
-      "titles": 9,
       "workouts": 14,
-      "miles_run": 26.8,
       "active_hours": 6.7,
+      "miles_run": 26.8,
+      "titles": 9,
       "days_traveled": 0
     },
     {
       "month": 2,
-      "titles": 14,
       "workouts": 13,
-      "miles_run": 24.9,
       "active_hours": 4.5,
+      "miles_run": 24.9,
+      "titles": 14,
       "days_traveled": 0
     },
     {
       "month": 3,
-      "titles": 15,
       "workouts": 13,
-      "miles_run": 42.9,
       "active_hours": 6.3,
+      "miles_run": 42.9,
+      "titles": 15,
       "days_traveled": 0
     },
     {
       "month": 4,
-      "titles": 14,
       "workouts": 11,
-      "miles_run": 27.0,
       "active_hours": 5.8,
+      "miles_run": 27,
+      "titles": 14,
       "days_traveled": 0
     },
     {
       "month": 5,
-      "titles": 11,
       "workouts": 11,
+      "active_hours": 9,
       "miles_run": 5.6,
-      "active_hours": 9.0,
+      "titles": 11,
       "days_traveled": 0
     },
     {
       "month": 6,
-      "titles": 6,
       "workouts": 9,
-      "miles_run": 0.0,
       "active_hours": 13.6,
+      "miles_run": 0,
+      "titles": 6,
       "days_traveled": 0
     },
     {
       "month": 7,
-      "titles": 8,
       "workouts": 10,
-      "miles_run": 0.0,
       "active_hours": 20.7,
+      "miles_run": 0,
+      "titles": 8,
       "days_traveled": 0
     },
     {
       "month": 8,
-      "titles": 11,
       "workouts": 10,
-      "miles_run": 0.0,
       "active_hours": 22.9,
+      "miles_run": 0,
+      "titles": 11,
       "days_traveled": 0
     },
     {
       "month": 9,
-      "titles": 11,
       "workouts": 6,
-      "miles_run": 0.0,
       "active_hours": 16.5,
+      "miles_run": 0,
+      "titles": 11,
       "days_traveled": 11
     },
     {
       "month": 10,
-      "titles": 6,
       "workouts": 11,
-      "miles_run": 7.6,
       "active_hours": 17.8,
+      "miles_run": 7.6,
+      "titles": 6,
       "days_traveled": 0
     },
     {
       "month": 11,
-      "titles": 10,
-      "workouts": 21,
+      "workouts": 23,
+      "active_hours": 10.7,
       "miles_run": 10.3,
-      "active_hours": 10.0,
+      "titles": 10,
       "days_traveled": 0
     }
   ],
@@ -298,225 +298,235 @@
     },
     {
       "week": 47,
-      "workouts": 1
+      "workouts": 3
     }
   ],
   "fitness": {
-    "races": [
-      {
-        "is_pr": true,
-        "label": "Half marathon",
-        "month": 4,
-        "distance_miles": 13.1
-      },
-      {
-        "is_pr": true,
-        "label": "5K",
-        "month": 11,
-        "distance_miles": 3.1
-      }
-    ],
     "by_type": [
       {
         "type": "Run",
-        "hours": 20.3,
-        "sessions": 47
+        "sessions": 47,
+        "hours": 20.3
       },
       {
         "type": "Ultimate Frisbee",
-        "hours": 93.7,
-        "sessions": 37
+        "sessions": 37,
+        "hours": 93.7
       },
       {
         "type": "Bike",
-        "hours": 7.9,
-        "sessions": 19
+        "sessions": 19,
+        "hours": 7.9
       },
       {
         "type": "Strength",
-        "hours": 8.1,
-        "sessions": 15
+        "sessions": 17,
+        "hours": 8.8
       },
       {
         "type": "Stair Master",
-        "hours": 2.3,
-        "sessions": 9
+        "sessions": 9,
+        "hours": 2.3
       },
       {
         "type": "Elliptical",
-        "hours": 0.6,
-        "sessions": 1
+        "sessions": 1,
+        "hours": 0.6
       },
       {
         "type": "Walk",
-        "hours": 1.0,
-        "sessions": 1
+        "sessions": 1,
+        "hours": 1
+      }
+    ],
+    "races": [
+      {
+        "label": "Half marathon",
+        "distance_miles": 13.1,
+        "is_pr": true,
+        "month": 4
+      },
+      {
+        "label": "5K",
+        "distance_miles": 3.1,
+        "is_pr": true,
+        "month": 11
       }
     ]
   },
   "media": {
-    "genres": [
-      {
-        "count": 40,
-        "genre": "Drama"
-      },
-      {
-        "count": 38,
-        "genre": "Action"
-      },
-      {
-        "count": 35,
-        "genre": "Adventure"
-      },
-      {
-        "count": 32,
-        "genre": "Thriller"
-      },
-      {
-        "count": 26,
-        "genre": "Action & Adventure"
-      },
-      {
-        "count": 26,
-        "genre": "Sci-Fi & Fantasy"
-      },
-      {
-        "count": 25,
-        "genre": "Science Fiction"
-      },
-      {
-        "count": 17,
-        "genre": "Comedy"
-      },
-      {
-        "count": 16,
-        "genre": "Mystery"
-      },
-      {
-        "count": 14,
-        "genre": "Animation"
-      },
-      {
-        "count": 12,
-        "genre": "Crime"
-      },
-      {
-        "count": 11,
-        "genre": "Horror"
-      }
-    ],
     "top_titles": [
       {
         "title": "Chernobyl",
-        "rating": 5.0,
-        "tmdb_id": 87108,
         "media_type": "tv",
-        "release_year": 2019
+        "release_year": 2019,
+        "rating": 5,
+        "tmdb_id": 87108,
+        "poster_path": "/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg"
       },
       {
         "title": "A Knight of the Seven Kingdoms",
+        "media_type": "tv",
+        "release_year": 2026,
         "rating": 4.5,
         "tmdb_id": 224372,
-        "media_type": "tv",
-        "release_year": 2026
+        "poster_path": "/k8yARbD9iYn2nRX2HvsopfKDN2r.jpg"
       },
       {
         "title": "Spider-Noir",
+        "media_type": "tv",
+        "release_year": 2026,
         "rating": 4.5,
         "tmdb_id": 220102,
-        "media_type": "tv",
-        "release_year": 2026
+        "poster_path": "/oD8WSVqz84ZRfelkr7JPeJwR9Iv.jpg"
       },
       {
         "title": "Star Wars: The Clone Wars",
+        "media_type": "tv",
+        "release_year": 2008,
         "rating": 4.5,
         "tmdb_id": 4194,
-        "media_type": "tv",
-        "release_year": 2008
+        "poster_path": "/e1nWfnnCVqxS2LeTO3dwGyAsG2V.jpg"
       },
       {
         "title": "42",
+        "media_type": "movie",
+        "release_year": 2013,
         "rating": 4.5,
         "tmdb_id": 109410,
-        "media_type": "movie",
-        "release_year": 2013
+        "poster_path": "/iZ7jVGQWj3eBUdqwAPUlKk0BaS2.jpg"
       },
       {
         "title": "A Fistful of Dollars",
+        "media_type": "movie",
+        "release_year": 1964,
         "rating": 4.5,
         "tmdb_id": 391,
-        "media_type": "movie",
-        "release_year": 1964
+        "poster_path": "/lBwOEpwVeUAmrmglcstnaGcJq3Y.jpg"
       },
       {
         "title": "Andor",
+        "media_type": "tv",
+        "release_year": 2022,
         "rating": 4.5,
         "tmdb_id": 83867,
-        "media_type": "tv",
-        "release_year": 2022
+        "poster_path": "/khZqmwHQicTYoS7Flreb9EddFZC.jpg"
       },
       {
         "title": "Avatar Aang: The Last Airbender",
+        "media_type": "movie",
+        "release_year": 2026,
         "rating": 4.5,
         "tmdb_id": 980431,
-        "media_type": "movie",
-        "release_year": 2026
+        "poster_path": "/29Jdsak3SrwGds5k1t43kH6Khed.jpg"
       },
       {
         "title": "Fallout",
+        "media_type": "tv",
+        "release_year": 2024,
         "rating": 4.5,
         "tmdb_id": 106379,
-        "media_type": "tv",
-        "release_year": 2024
+        "poster_path": "/c15BtJxCXMrISLVmysdsnZUPQft.jpg"
       },
       {
         "title": "KPop Demon Hunters",
+        "media_type": "movie",
+        "release_year": 2025,
         "rating": 4.5,
         "tmdb_id": 803796,
-        "media_type": "movie",
-        "release_year": 2025
+        "poster_path": "/zT7Lhw3BhJbMkRqm9Zlx2YGMsY0.jpg"
+      }
+    ],
+    "genres": [
+      {
+        "genre": "Drama",
+        "count": 40
+      },
+      {
+        "genre": "Action",
+        "count": 38
+      },
+      {
+        "genre": "Adventure",
+        "count": 35
+      },
+      {
+        "genre": "Thriller",
+        "count": 32
+      },
+      {
+        "genre": "Action & Adventure",
+        "count": 26
+      },
+      {
+        "genre": "Sci-Fi & Fantasy",
+        "count": 26
+      },
+      {
+        "genre": "Science Fiction",
+        "count": 25
+      },
+      {
+        "genre": "Comedy",
+        "count": 17
+      },
+      {
+        "genre": "Mystery",
+        "count": 16
+      },
+      {
+        "genre": "Animation",
+        "count": 14
+      },
+      {
+        "genre": "Crime",
+        "count": 12
+      },
+      {
+        "genre": "Horror",
+        "count": 11
       }
     ],
     "rating_dist": [
       {
-        "count": 0,
-        "stars": 0.5
+        "stars": 0.5,
+        "count": 0
       },
       {
-        "count": 0,
-        "stars": 1.0
+        "stars": 1,
+        "count": 0
       },
       {
-        "count": 1,
-        "stars": 1.5
+        "stars": 1.5,
+        "count": 1
       },
       {
-        "count": 0,
-        "stars": 2.0
+        "stars": 2,
+        "count": 0
       },
       {
-        "count": 2,
-        "stars": 2.5
+        "stars": 2.5,
+        "count": 2
       },
       {
-        "count": 1,
-        "stars": 3.0
+        "stars": 3,
+        "count": 1
       },
       {
-        "count": 21,
-        "stars": 3.5
+        "stars": 3.5,
+        "count": 21
       },
       {
-        "count": 55,
-        "stars": 4.0
+        "stars": 4,
+        "count": 55
       },
       {
-        "count": 34,
-        "stars": 4.5
+        "stars": 4.5,
+        "count": 34
       },
       {
-        "count": 1,
-        "stars": 5.0
+        "stars": 5,
+        "count": 1
       }
     ]
   },
@@ -526,40 +536,74 @@
         "month": 9,
         "stops": [
           {
-            "lat": 38.0,
-            "lon": 23.7,
             "city": "Athens",
-            "mode_in": "flight",
-            "country_code": "GR"
+            "country_code": "GR",
+            "lat": 38,
+            "lon": 23.7,
+            "mode_in": "flight"
           },
           {
-            "lat": 47.5,
-            "lon": 19.0,
             "city": "Budapest",
-            "mode_in": "flight",
-            "country_code": "HU"
+            "country_code": "HU",
+            "lat": 47.5,
+            "lon": 19,
+            "mode_in": "flight"
           },
           {
+            "city": "Praha",
+            "country_code": "CZ",
             "lat": 50.1,
             "lon": 14.4,
-            "city": "Praha",
-            "mode_in": "flight",
-            "country_code": "CZ"
+            "mode_in": "flight"
           },
           {
+            "city": "Munich",
+            "country_code": "DE",
             "lat": 48.1,
             "lon": 11.6,
-            "city": "Munich",
-            "mode_in": "train",
-            "country_code": "DE"
+            "mode_in": "train"
           }
         ]
       }
     ],
     "lifetime": {
+      "countries": [
+        "CH",
+        "CZ",
+        "DE",
+        "DK",
+        "ES",
+        "FR",
+        "GB",
+        "GR",
+        "HU",
+        "IT",
+        "NL",
+        "NO",
+        "SE"
+      ],
+      "us_states": [
+        "AL",
+        "AZ",
+        "CA",
+        "FL",
+        "GA",
+        "IA",
+        "LA",
+        "MN",
+        "MO",
+        "MT",
+        "NV",
+        "NY",
+        "SC",
+        "TN",
+        "TX",
+        "WA",
+        "WI"
+      ],
       "stops": [
         {
-          "lat": 38.0,
+          "lat": 38,
           "lon": 23.7
         },
         {
@@ -588,7 +632,7 @@
         },
         {
           "lat": 47.5,
-          "lon": 19.0
+          "lon": 19
         },
         {
           "lat": 48.1,
@@ -626,40 +670,6 @@
           "lat": 59.9,
           "lon": 10.7
         }
-      ],
-      "countries": [
-        "CH",
-        "CZ",
-        "DE",
-        "DK",
-        "ES",
-        "FR",
-        "GB",
-        "GR",
-        "HU",
-        "IT",
-        "NL",
-        "NO",
-        "SE"
-      ],
-      "us_states": [
-        "AL",
-        "AZ",
-        "CA",
-        "FL",
-        "GA",
-        "IA",
-        "LA",
-        "MN",
-        "MO",
-        "MT",
-        "NV",
-        "NY",
-        "SC",
-        "TN",
-        "TX",
-        "WA",
-        "WI"
       ]
     }
   }

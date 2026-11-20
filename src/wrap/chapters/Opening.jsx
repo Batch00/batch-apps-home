@@ -1,10 +1,22 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Clapperboard, Dumbbell, Plane } from "lucide-react";
 import { Beats, Chapter, Frame } from "../components/Chapter";
 import { CountUp, Reveal, Scrub } from "../components/motion";
 import { formatNumber, plural } from "../format";
+import { insight } from "../insights";
+
+// The three apps behind most of the year, as a ledger under the headline number.
+function ledger(t) {
+  return [
+    { icon: Dumbbell, value: t.workouts, label: plural(t.workouts, "workout") },
+    { icon: Clapperboard, value: t.titles, label: plural(t.titles, "title") },
+    { icon: Plane, value: t.days_traveled, label: `${plural(t.days_traveled, "day")} away` },
+  ].filter((row) => typeof row.value === "number" && row.value > 0);
+}
 
 export default function Opening({ data, meta, state }) {
   const t = data.totals;
+  const rate = insight(data, "data-rate");
+  const rows = ledger(t);
 
   return (
     <Chapter {...meta}>
@@ -36,11 +48,29 @@ export default function Opening({ data, meta, state }) {
             <Reveal as="p" at={0.4} delay={200} className="mt-5 text-headline text-text-primary">
               data <span className="text-accent">points</span>
             </Reveal>
-            <Reveal as="p" at={0.4} delay={450} className="mt-8 max-w-xl text-lede text-secondary">
-              {formatNumber(t.workouts)} {plural(t.workouts, "workout")}. {formatNumber(t.titles)}{" "}
-              {plural(t.titles, "title")}. {formatNumber(t.countries)} {plural(t.countries, "country", "countries")}.
-              Here is how it all adds up.
-            </Reveal>
+            {rate && (
+              <Reveal as="p" at={0.4} delay={400} className="mt-6 max-w-xl text-lede text-secondary">
+                {rate}
+              </Reveal>
+            )}
+            {rows.length > 0 && (
+              <ul className="mt-10 grid max-w-2xl grid-cols-3 border-t border-border">
+                {rows.map(({ icon: Icon, value, label }, i) => (
+                  <Reveal
+                    as="li"
+                    key={label}
+                    at={0.4}
+                    delay={600 + i * 120}
+                    y={16}
+                    className="border-r border-border pr-3 pt-5 last:border-r-0 sm:pr-6 [&:not(:first-child)]:pl-3 sm:[&:not(:first-child)]:pl-6"
+                  >
+                    <Icon size={16} className="mb-3 text-accent" aria-hidden="true" />
+                    <p className="text-title tabular-nums text-text-primary">{formatNumber(value)}</p>
+                    <p className="mt-1 text-caption text-secondary">{label}</p>
+                  </Reveal>
+                ))}
+              </ul>
+            )}
           </Reveal>
         </Beats>
       </Frame>

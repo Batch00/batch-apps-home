@@ -5,6 +5,7 @@ import { formatAsOf } from "../../lib/ytd";
 
 export default function Closing({ data, meta, state }) {
   const asOf = formatAsOf(data.as_of);
+  const usesTmdb = (data.media?.top_titles ?? []).length > 0;
 
   return (
     <Chapter {...meta}>
@@ -28,6 +29,20 @@ export default function Closing({ data, meta, state }) {
           <p className="mt-10 text-caption text-secondary">
             {asOf ? `Updated ${asOf}. ` : ""}Trips appear two weeks after they end. Counts only, no amounts.
           </p>
+          {usesTmdb && (
+            <p className="mt-3 max-w-xl text-caption text-text-muted">
+              Film and TV posters and data from{" "}
+              <a
+                href="https://www.themoviedb.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-border underline-offset-4 transition-colors hover:text-text-primary"
+              >
+                TMDB
+              </a>
+              . This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </p>
+          )}
           <a
             href="/"
             className="mt-12 inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-caption font-medium text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
