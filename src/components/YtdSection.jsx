@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Clapperboard, Database, Dumbbell, Globe, Plane, Timer } from "lucide-react";
 import { useFadeIn } from "../hooks/useFadeIn";
+import { currentYear, formatAsOf, isUsable, loadYtd } from "../lib/ytd";
 
-const TIME_ZONE = "America/Chicago";
 const FETCH_TIMEOUT_MS = 8000;
 
 const TILES = [
@@ -14,43 +14,11 @@ const TILES = [
   { key: "data_points", label: "Data points", icon: Database },
 ];
 
-function currentYear() {
-  return Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, year: "numeric" }).format(new Date()));
-}
-
 function formatValue(value, decimals = 0) {
   return value.toLocaleString("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   });
-}
-
-// as_of is the refresh date (YYYY-MM-DD); format it without a time zone shift.
-function formatAsOf(asOf) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(asOf ?? "");
-  if (!match) return null;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return date.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
-}
-
-async function loadYtd(year, signal) {
-  try {
-    const res = await fetch(`/api/ytd?year=${year}`, { signal });
-    if (!res.ok) throw new Error(`YTD request failed with ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    // The Vite dev server has no /api, so local development falls back to the fixture.
-    // This branch is removed from production builds.
-    if (import.meta.env.DEV && err.name !== "AbortError") {
-      console.info("YTD: using the local fixture in development");
-      return (await import("../wrap/fixtures/2026.json")).default;
-    }
-    throw err;
-  }
-}
-
-function isUsable(data) {
-  return data && data.version === 1 && data.totals && typeof data.totals === "object";
 }
 
 function Tile({ label, icon: Icon, value, decimals, isPartial }) {

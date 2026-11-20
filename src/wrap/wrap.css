@@ -1,0 +1,173 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap");
+
+/* Wrap-only Tailwind build. It lives in this lazy CSS chunk, never in the home page CSS. */
+@config "../../tailwind.wrap.config.js";
+@tailwind utilities;
+
+/*
+  Scroll engine contract
+  ----------------------
+  The engine writes two numbers on every .wrap-chapter, once per animation frame:
+    --p  0 to 1 while the chapter's stage is pinned (its scroll-through progress)
+    --e  0 to 1 while the chapter scrolls into view (1 once its top reaches the top of the viewport)
+  Motion primitives read them through per-element knobs that the React components set inline:
+    --at    progress where the motion starts
+    --span  how much progress the motion takes
+    --out   pinned progress where the element has fully left (Reveal only)
+    --out-span  how much pinned progress the exit takes (default 0.1)
+  Under reduced motion the engine pins both values to 1 and the rules at the bottom flatten
+  everything into a static, readable page.
+*/
+
+.wrap-root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-x: clip;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Chapter layout: a tall section with a pinned full-screen stage inside it. */
+.wrap-chapter {
+  position: relative;
+  height: calc(var(--len, 3) * 100svh);
+}
+
+.wrap-stage {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* Beats share one grid cell, so each beat takes over the stage in turn. */
+.wrap-beats {
+  display: grid;
+  align-items: center;
+}
+
+.wrap-beats > * {
+  grid-area: 1 / 1;
+}
+
+/* Shared progress math for every primitive. */
+.wrap-reveal,
+.wrap-scrub,
+.wrap-grow {
+  --src: var(--p, 0);
+  --r: clamp(0, (var(--src) - var(--at, 0)) / var(--span, 0.12), 1);
+  /* Leaving always follows the pinned progress, even for a beat that entered with data-on="enter". */
+  --o: clamp(0, (var(--out, 9) - var(--p, 0)) / var(--out-span, 0.1), 1);
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.9s var(--ease-out);
+  will-change: opacity, transform;
+}
+
+/* data-on="enter" drives a primitive from the chapter's entry instead of its pinned progress. */
+[data-on="enter"] {
+  --src: var(--e, 0);
+}
+
+/* Reveal: fade and rise in, optionally fade and rise out. */
+.wrap-reveal {
+  opacity: min(var(--r), var(--o));
+  transform: translate3d(0, calc(((1 - var(--r)) - (1 - var(--o))) * var(--y, 40) * 1px), 0);
+}
+
+/* Scrub: interpolate opacity, vertical offset and scale between two states. */
+.wrap-scrub {
+  opacity: calc(var(--a0, 1) + (var(--a1, 1) - var(--a0, 1)) * var(--r));
+  transform: translate3d(0, calc((var(--y0, 0) + (var(--y1, 0) - var(--y0, 0)) * var(--r)) * 1px), 0)
+    scale(calc(var(--s0, 1) + (var(--s1, 1) - var(--s0, 1)) * var(--r)));
+  transform-origin: var(--origin, 50% 50%);
+}
+
+/* Grow: bars that grow from their base. */
+.wrap-grow {
+  opacity: calc(0.25 + var(--r) * 0.75);
+  transform: scaleY(var(--r));
+  transform-origin: 50% 100%;
+}
+
+.wrap-grow[data-axis="x"] {
+  transform: scaleX(var(--r));
+  transform-origin: 0 50%;
+}
+
+/* Page progress line in the top bar. */
+.wrap-progress {
+  transform: scaleX(var(--page, 0));
+  transform-origin: 0 50%;
+}
+
+/* One-time load motion for the opening, and the scroll cue. Keep these off scroll-driven elements. */
+@keyframes wrap-intro {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8%, 0);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.wrap-intro {
+  animation: wrap-intro 1.8s var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes wrap-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+.wrap-bob {
+  animation: wrap-bob 2.6s ease-in-out infinite;
+}
+
+/* Reduced motion: no pinning, no scroll-linked motion, every beat stacked in reading order. */
+.wrap-root[data-motion="reduce"] .wrap-chapter {
+  height: auto;
+}
+
+.wrap-root[data-motion="reduce"] .wrap-stage {
+  position: relative;
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+
+.wrap-root[data-motion="reduce"] .wrap-beats {
+  row-gap: clamp(4rem, 14vh, 8rem);
+}
+
+.wrap-root[data-motion="reduce"] .wrap-beats > * {
+  grid-area: auto;
+}
+
+.wrap-root[data-motion="reduce"] :is(.wrap-reveal, .wrap-scrub, .wrap-grow) {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.wrap-root[data-motion="reduce"] :is(.wrap-intro, .wrap-bob) {
+  animation: none;
+}
+
+.wrap-root[data-motion="reduce"] [data-motion-only] {
+  display: none;
+}
+
+html:has(.wrap-root[data-motion="reduce"]) {
+  scroll-behavior: auto;
+}

@@ -1,8 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // src/wrap has its own Tailwind build (tailwind.wrap.config.js) that ships in the
+  // lazy wrap chunk, so wrap-only classes never reach the home page CSS.
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "!./src/wrap/**",
   ],
   theme: {
     extend: {

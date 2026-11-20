@@ -33,6 +33,12 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - `src/components/YtdSection.jsx` sits between Apps and About: six tiles and a freshness stamp, hidden on any error.
 - `src/wrap/fixtures/2026.json` is a sample payload. `npm run dev` has no `/api`, so the section falls back to it in development only.
 
+## BatchWrap page (/2026)
+- `main.jsx` checks the path (no router): `/<year>` for 2025 through the current year renders `src/WrapRoute.jsx`, which lazy-loads `src/wrap/WrapApp.jsx`. The home page must never import from `src/wrap/` (check `dist/` after a build).
+- `src/wrap/` has its own Tailwind build: `src/wrap/wrap.css` loads `tailwind.wrap.config.js` (type scale `text-mega`, `display`, `headline`, `title`, `lede`, `eyebrow`, `caption`), and the home config excludes `src/wrap/**`.
+- Chapters live in `src/wrap/chapters/` and are listed in order in `chapters/index.js` (`length` in screens, `isEligible`). Build them from `Chapter`, `Frame`, `Beats` (`components/Chapter.jsx`) and the motion primitives `Reveal`, `Scrub`, `Grow`, `CountUp` (`components/motion.jsx`).
+- One scroll engine (`engine/scrollEngine.js`) writes `--p` and `--e` on each chapter. For canvas or JS motion use `useChapterProgress` (`engine/progress.js`). Reduced motion pins progress to 1 and flattens the page; `?motion=reduce` forces it, and `?state=final` previews the frozen-year copy in development.
+
 ## Deployment
 - Push to `main` triggers auto-deploy on Vercel
 - Domain: batch-apps.com
