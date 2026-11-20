@@ -189,6 +189,10 @@
   transition: none;
 }
 
+.wrap-root[data-motion="reduce"] .wrap-fade {
+  transition: none;
+}
+
 .wrap-root[data-motion="reduce"] :is(.wrap-intro, .wrap-bob) {
   animation: none;
 }
