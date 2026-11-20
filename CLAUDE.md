@@ -37,6 +37,7 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - `main.jsx` checks the path (no router): `/<year>` for 2025 through the current year renders `src/WrapRoute.jsx`, which lazy-loads `src/wrap/WrapApp.jsx`. The home page must never import from `src/wrap/` (check `dist/` after a build).
 - `src/wrap/` has its own Tailwind build: `src/wrap/wrap.css` loads `tailwind.wrap.config.js` (type scale `text-mega`, `display`, `headline`, `title`, `lede`, `eyebrow`, `caption`), and the home config excludes `src/wrap/**`.
 - Chapters live in `src/wrap/chapters/` and are listed in order in `chapters/index.js` (`length` in screens, `isEligible`). Build them from `Chapter`, `Frame`, `Beats` (`components/Chapter.jsx`) and the motion primitives `Reveal`, `Scrub`, `Grow`, `CountUp` (`components/motion.jsx`).
+- Scroll triggers, time animates: `Reveal`, `Grow` and `CountUp` fire when progress crosses `at`, then run to completion on a timer, so a paused page always shows true values and only one beat is visible at a time. `Scrub` follows the scroll exactly and is for decorative motion only, never data.
 - One scroll engine (`engine/scrollEngine.js`) writes `--p` and `--e` on each chapter. For canvas or JS motion use `useChapterProgress` (`engine/progress.js`). Reduced motion pins progress to 1 and flattens the page; `?motion=reduce` forces it, and `?state=final` previews the frozen-year copy in development.
 
 ## Deployment

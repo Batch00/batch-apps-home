@@ -14,46 +14,40 @@ export default function Opening({ data, meta, state }) {
       />
       <Frame>
         <Beats>
-          <Scrub at={0.04} span={0.4} opacity={[1, 0]} y={[0, -140]} scale={[1, 0.86]} origin="0% 60%">
-            <div className="wrap-intro">
-              <p className="mb-6 text-eyebrow uppercase text-accent sm:mb-8">BatchWrap</p>
-              <h1 className="text-mega text-text-primary">{data.year}</h1>
-              <p className="mt-8 max-w-xl text-lede text-text-muted sm:mt-10">
-                A year in data, logged one workout, one title and one stop at a time across the Batch Apps.
-              </p>
-            </div>
-          </Scrub>
+          <Reveal out={0.36} y={0}>
+            <Scrub at={0.02} span={0.34} y={[0, -90]} scale={[1, 0.9]} origin="0% 60%">
+              <div className="wrap-intro">
+                <p className="mb-6 text-eyebrow uppercase text-accent sm:mb-8">BatchWrap</p>
+                <h1 className="text-mega text-text-primary">{data.year}</h1>
+                <p className="mt-8 max-w-xl text-lede text-secondary sm:mt-10">
+                  A year in data, from five apps I built to track it.
+                </p>
+              </div>
+            </Scrub>
+          </Reveal>
 
-          <div>
-            <Reveal at={0.44} span={0.14}>
-              <p className="mb-6 text-eyebrow uppercase text-text-muted">
-                {state.isFinal ? `Logged in ${data.year}` : "Logged so far"}
-              </p>
+          <Reveal at={0.4}>
+            <p className="mb-6 text-eyebrow uppercase text-text-muted">
+              {state.isFinal ? `Logged in ${data.year}` : "Logged so far"}
+            </p>
+            <p className="text-display text-text-primary">
+              <CountUp value={t.data_points} at={0.4} />
+            </p>
+            <Reveal as="p" at={0.4} delay={200} className="mt-5 text-headline text-text-primary">
+              data <span className="text-accent">points</span>
             </Reveal>
-            <Reveal at={0.47} span={0.16}>
-              <p className="text-display text-text-primary">
-                <CountUp value={t.data_points} at={0.47} span={0.3} />
-              </p>
+            <Reveal as="p" at={0.4} delay={450} className="mt-8 max-w-xl text-lede text-secondary">
+              {formatNumber(t.workouts)} {plural(t.workouts, "workout")}. {formatNumber(t.titles)}{" "}
+              {plural(t.titles, "title")}. {formatNumber(t.countries)} {plural(t.countries, "country", "countries")}.
+              Here is how it all adds up.
             </Reveal>
-            <Reveal at={0.56} span={0.14}>
-              <p className="mt-5 text-headline text-text-primary">
-                data <span className="text-accent">points</span>
-              </p>
-            </Reveal>
-            <Reveal at={0.66} span={0.14}>
-              <p className="mt-8 max-w-xl text-lede text-text-muted">
-                {formatNumber(t.workouts)} {plural(t.workouts, "workout")}. {formatNumber(t.titles)}{" "}
-                {plural(t.titles, "title")}. {formatNumber(t.countries)} {plural(t.countries, "country", "countries")}.
-                Here is how it all adds up.
-              </p>
-            </Reveal>
-          </div>
+          </Reveal>
         </Beats>
       </Frame>
 
       <div data-motion-only aria-hidden="true" className="absolute inset-x-0 bottom-8 flex justify-center">
         <Scrub at={0} span={0.1} opacity={[1, 0]}>
-          <div className="wrap-bob flex flex-col items-center gap-2 text-eyebrow uppercase text-dim">
+          <div className="wrap-bob flex flex-col items-center gap-2 text-eyebrow uppercase text-text-muted">
             Scroll
             <ChevronDown size={16} />
           </div>

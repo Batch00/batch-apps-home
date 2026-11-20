@@ -22,6 +22,9 @@ export default {
       ...base.theme.extend,
       colors: {
         ...base.theme.extend.colors,
+        // Secondary text (ledes, captions): the lightest gray that still reads below
+        // text-primary (#f5f5f5). About 9.4:1 on #0a0a0a; text-muted (#888) stays for labels.
+        secondary: "#b3b3b3",
         dim: "#555555",
         faint: "#1c1c1c",
       },

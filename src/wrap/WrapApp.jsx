@@ -41,7 +41,7 @@ function Unavailable({ year }) {
       <h1 className="max-w-3xl text-headline text-text-primary">This year in review is not available right now.</h1>
       <a
         href="/"
-        className="mt-10 inline-flex w-fit items-center gap-2 text-caption font-medium text-text-muted transition-colors hover:text-text-primary"
+        className="mt-10 inline-flex w-fit items-center gap-2 text-caption font-medium text-secondary transition-colors hover:text-text-primary"
       >
         <ArrowLeft size={16} aria-hidden="true" />
         Back to Batch Apps

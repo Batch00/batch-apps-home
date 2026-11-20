@@ -16,7 +16,7 @@ export default function Patterns({ data, meta, state }) {
   return (
     <Chapter {...meta}>
       <Frame>
-        <Reveal on="enter" at={0.5} span={0.45}>
+        <Reveal on="enter" at={0.5}>
           <Eyebrow number={meta.number} className="mb-8 sm:mb-10">
             {meta.label}
           </Eyebrow>
@@ -28,14 +28,14 @@ export default function Patterns({ data, meta, state }) {
         <div className="mt-12 grid max-w-4xl grid-cols-[auto_repeat(12,minmax(0,1fr))] items-center gap-1 sm:gap-2" aria-hidden="true">
           <span />
           {months.map((month) => (
-            <span key={month} className="pb-1 text-center text-caption text-dim">
+            <span key={month} className="pb-1 text-center text-caption text-text-muted">
               {monthInitial(month)}
             </span>
           ))}
           {ROWS.map((row) => {
             const max = Math.max(1, ...months.map((m) => byMonth.get(m)?.[row.key] ?? 0));
             return [
-              <span key={`${row.key}-label`} className="pr-2 text-caption text-text-muted sm:pr-4">
+              <span key={`${row.key}-label`} className="pr-2 text-caption text-secondary sm:pr-4">
                 {row.label}
               </span>,
               ...months.map((month, i) => {
@@ -43,10 +43,10 @@ export default function Patterns({ data, meta, state }) {
                 const isFuture = month > state.lastMonth || value == null;
                 const strength = isFuture ? 0 : value / max;
                 return (
-                  <Reveal key={`${row.key}-${month}`} at={0.05 + i * 0.03} span={0.12} y={12}>
+                  <Reveal key={`${row.key}-${month}`} on="enter" at={0.5} delay={200 + i * 45} y={12}>
                     <div
                       className={`aspect-square w-full rounded-[3px] ${
-                        isFuture ? "border border-dashed border-faint" : value === max ? "bg-accent" : ""
+                        isFuture ? "border border-dashed border-dim" : value === max ? "bg-accent" : ""
                       }`}
                       style={
                         isFuture || value === max
@@ -61,8 +61,8 @@ export default function Patterns({ data, meta, state }) {
           })}
         </div>
 
-        <Reveal at={0.45} span={0.12}>
-          <p className="mt-8 max-w-xl text-caption text-text-muted">
+        <Reveal on="enter" at={0.5} delay={900}>
+          <p className="mt-8 max-w-xl text-caption text-secondary">
             Brighter means busier. Each row is scaled to its own peak, marked in blue.
           </p>
         </Reveal>

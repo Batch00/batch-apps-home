@@ -77,6 +77,10 @@ export function setReducedMotion(value) {
   schedule();
 }
 
+export function isReducedMotion() {
+  return reduced;
+}
+
 // Layout changed without a scroll (fonts loaded, data arrived): measure again.
 export function refreshProgress() {
   schedule();

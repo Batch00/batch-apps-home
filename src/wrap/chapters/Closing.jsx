@@ -13,19 +13,19 @@ export default function Closing({ data, meta, state }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-3/4 bg-[radial-gradient(ellipse_60%_55%_at_70%_0%,rgba(59,130,246,0.12),transparent_70%)]"
       />
       <Frame>
-        <Reveal on="enter" at={0.35} span={0.5}>
+        <Reveal on="enter" at={0.5}>
           <p className="mb-8 text-eyebrow uppercase text-accent">{state.label}</p>
           <h2 className="max-w-5xl text-headline text-text-primary sm:text-[clamp(3rem,8vw,7rem)]">
             {state.isFinal ? `That was ${data.year}.` : `That's ${data.year} so far.`}
           </h2>
         </Reveal>
-        <Reveal on="enter" at={0.6} span={0.4}>
-          <p className="mt-8 max-w-xl text-lede text-text-muted">
+        <Reveal on="enter" at={0.5} delay={250}>
+          <p className="mt-8 max-w-xl text-lede text-secondary">
             {state.isFinal
               ? `Every number here is final. See you in ${data.year + 1}.`
               : "The story keeps writing itself until the year is out. The final cut lands in January."}
           </p>
-          <p className="mt-10 text-caption text-text-muted">
+          <p className="mt-10 text-caption text-secondary">
             {asOf ? `Updated ${asOf}. ` : ""}Trips appear two weeks after they end. Counts only, no amounts.
           </p>
           <a

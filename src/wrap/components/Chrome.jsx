@@ -49,7 +49,7 @@ export function TopBar({ label, chapters }) {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 sm:px-10 lg:px-16">
         <a
           href="/"
-          className="flex items-center gap-2 rounded text-caption font-medium text-text-muted transition-colors hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          className="flex items-center gap-2 rounded text-caption font-medium text-secondary transition-colors hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <ArrowLeft size={16} aria-hidden="true" />
           Batch Apps

@@ -1,32 +1,29 @@
-import { useRef } from "react";
-import { easeOutCubic, useChapterProgress, windowed } from "../engine/progress";
+import { useEffect, useRef } from "react";
+import { GAP_MS, PLAY_MS, easeOutCubic, useChapterProgress, useTrigger } from "../engine/progress";
+import { isReducedMotion } from "../engine/scrollEngine";
 import { formatNumber } from "../format";
 
-// Motion primitives. All of them are driven by the enclosing Chapter's progress:
-//   at, span  the progress window the motion plays across (0 to 1 of the pinned scroll)
-//   on        "enter" to use the chapter's entry progress instead (for a chapter's first beat)
-// Everything except CountUp is pure CSS math on --p / --e, so scrolling never re-renders React.
+// Motion primitives, all driven by the enclosing Chapter's progress.
+//   at     progress that triggers the motion (0 to 1 of the pinned scroll)
+//   out    pinned progress that sends it away again (Reveal only)
+//   on     "enter" to trigger from the chapter's entry progress instead (a chapter's first beat)
+//   delay  extra milliseconds before it plays, for staggering items inside one beat
+//
+// Reveal, Grow and CountUp are triggered: scroll position decides when they play, then they
+// run to completion on a timer. They never stop halfway, so a paused page always shows true
+// values. Scrub is the only scroll-scrubbed primitive; keep it to decorative motion.
 
-// Fade and rise in across [at, at + span]. With `out`, fade and rise away across
-// [out - outSpan, out] of the pinned progress (also when the entrance used on="enter").
-export function Reveal({
-  as: Tag = "div",
-  at = 0,
-  span = 0.12,
-  out,
-  outSpan = 0.1,
-  y = 40,
-  on,
-  className = "",
-  style,
-  children,
-  ...rest
-}) {
+// Fades and rises in when triggered; with `out`, leaves upward. An entering Reveal waits for
+// any leaving one to finish first, so two beats never show at once.
+export function Reveal({ as: Tag = "div", at = 0, out, on, delay = 0, y = 32, className = "", style, children, ...rest }) {
+  const ref = useRef(null);
+  useTrigger(ref, { at, out, on });
+
   return (
     <Tag
+      ref={ref}
       className={`wrap-reveal ${className}`}
-      data-on={on}
-      style={{ "--at": at, "--span": span, "--out": out ?? 9, "--out-span": outSpan, "--y": y, ...style }}
+      style={{ "--delay": `${delay}ms`, "--y": y, ...style }}
       {...rest}
     >
       {children}
@@ -34,7 +31,8 @@ export function Reveal({
   );
 }
 
-// Interpolate opacity, y (px) and scale from the first value to the second across [at, at + span].
+// Interpolates opacity, y (px) and scale from the first value to the second across
+// [at, at + span], following the scroll exactly. Decorative motion only: never data.
 export function Scrub({
   as: Tag = "div",
   at = 0,
@@ -72,28 +70,53 @@ export function Scrub({
   );
 }
 
-// A bar that grows from its base (or from the left with axis="x") across [at, at + span].
-export function Grow({ as: Tag = "div", at = 0, span = 0.15, axis = "y", on, className = "", style, ...rest }) {
-  return (
-    <Tag
-      className={`wrap-grow ${className}`}
-      data-on={on}
-      data-axis={axis}
-      style={{ "--at": at, "--span": span, ...style }}
-      {...rest}
-    />
-  );
+// A bar that grows from its base (or from the left with axis="x") once triggered.
+export function Grow({ as: Tag = "div", at = 0, on, delay = 0, axis = "y", className = "", style, ...rest }) {
+  const ref = useRef(null);
+  useTrigger(ref, { at, on });
+
+  return <Tag ref={ref} className={`wrap-grow ${className}`} data-axis={axis} style={{ "--delay": `${delay}ms`, ...style }} {...rest} />;
 }
 
-// A number that counts up across [at, at + span]. Screen readers get the final value only.
-export function CountUp({ value, decimals = 0, at = 0, span = 0.2, on, className = "" }) {
+// Counts from zero to `value` once triggered, then holds the final value for good.
+// Screen readers only ever get the final value.
+export function CountUp({ value, decimals = 0, at = 0, on, delay = 0, className = "" }) {
   const ref = useRef(null);
+  const run = useRef({ played: false, frame: 0, timer: 0 });
   const final = formatNumber(value, decimals);
 
+  useEffect(() => {
+    const current = run.current;
+    return () => {
+      cancelAnimationFrame(current.frame);
+      clearTimeout(current.timer);
+    };
+  }, []);
+
   useChapterProgress((p, e) => {
-    if (!ref.current) return;
-    const t = easeOutCubic(windowed(on === "enter" ? e : p, at, span));
-    ref.current.textContent = t >= 1 ? final : formatNumber(value * t, decimals, true);
+    const el = ref.current;
+    const state = run.current;
+    if (!el || state.played || (on === "enter" ? e : p) < at) return;
+    state.played = true;
+    if (isReducedMotion()) {
+      el.textContent = final;
+      return;
+    }
+
+    const wait = GAP_MS + delay;
+    const start = performance.now() + wait;
+    el.textContent = formatNumber(0, decimals, true);
+    const tick = (now) => {
+      const t = Math.min(1, Math.max(0, (now - start) / PLAY_MS));
+      el.textContent = t >= 1 ? final : formatNumber(value * easeOutCubic(t), decimals, true);
+      if (t < 1) state.frame = requestAnimationFrame(tick);
+    };
+    state.frame = requestAnimationFrame(tick);
+    // Guarantee the true number lands even if animation frames are throttled.
+    state.timer = setTimeout(() => {
+      cancelAnimationFrame(state.frame);
+      el.textContent = final;
+    }, wait + PLAY_MS + 50);
   });
 
   return (
