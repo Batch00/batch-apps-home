@@ -9,6 +9,9 @@
 const AS_OF_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const CODE_PATTERN = /^[A-Z]{2}$/;
 const MEDIA_TYPES = new Set(["movie", "tv"]);
+// A TMDB image path such as "/a1B2c3.jpg": one segment, no host, no query. The page prefixes
+// TMDB's image host itself, so nothing here can point a public image anywhere else.
+const POSTER_PATTERN = /^\/[A-Za-z0-9_-]{1,80}\.(jpg|jpeg|png|webp)$/;
 
 const TOTAL_KEYS = [
   "workouts",
@@ -43,6 +46,10 @@ function text(value, maxLength) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed && trimmed.length <= maxLength ? trimmed : null;
+}
+
+function posterPath(value) {
+  return typeof value === "string" && POSTER_PATTERN.test(value) ? value : null;
 }
 
 function code(value) {
@@ -126,6 +133,7 @@ export function toPublicYtd(raw) {
               release_year: int(t.release_year, 1870, 2100),
               rating: num(t.rating),
               tmdb_id: int(t.tmdb_id, 1, Number.MAX_SAFE_INTEGER),
+              poster_path: posterPath(t.poster_path),
             };
       }),
       genres: mapList(media.genres, (g) => {
