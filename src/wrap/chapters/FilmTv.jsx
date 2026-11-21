@@ -41,13 +41,15 @@ export default function FilmTv({ data, meta }) {
   const habit = insight(data, "rating-habit");
   const genreLine = insight(data, "top-genre");
   const oldest = insight(data, "oldest-favorite");
+  const hasRating = t.avg_rating != null;
 
   return (
     <Chapter {...meta}>
       <Frame>
         <Beats>
           {/* Beat 1: image-led. The year's favorites as a poster wall, the count as one line. */}
-          <Reveal on="enter" at={0.5} out={0.36}>
+          {/* A beat leaves only when a later beat exists to take the stage. */}
+          <Reveal on="enter" at={0.5} out={hasRating ? 0.36 : top ? 0.68 : undefined}>
             <Eyebrow number={meta.number} className="mb-6 sm:mb-8">
               {meta.label}
             </Eyebrow>
@@ -70,8 +72,8 @@ export default function FilmTv({ data, meta }) {
           </Reveal>
 
           {/* Beat 2: chart-led. How the ratings fell, and what the genres leaned toward. */}
-          {t.avg_rating != null && (
-            <Reveal at={0.36} out={0.7}>
+          {hasRating && (
+            <Reveal at={0.36} out={top ? 0.7 : undefined}>
               <p className="text-eyebrow uppercase text-text-muted">How it rated</p>
               <p className="mt-5 flex items-center gap-3 text-headline text-text-primary">
                 {formatNumber(t.avg_rating, 1, true)}

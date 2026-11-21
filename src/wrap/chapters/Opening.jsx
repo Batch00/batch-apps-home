@@ -30,7 +30,10 @@ export default function Opening({ data, meta, state }) {
             <Scrub at={0.02} span={0.34} y={[0, -90]} scale={[1, 0.9]} origin="0% 60%">
               <div className="wrap-intro">
                 <p className="mb-6 text-eyebrow uppercase text-accent sm:mb-8">BatchWrap</p>
-                <h1 className="text-mega text-text-primary">{data.year}</h1>
+                <h1 className="text-mega text-text-primary">
+                  {data.year}
+                  <span className="sr-only"> {state.isFinal ? "in review" : "so far"}</span>
+                </h1>
                 <p className="mt-8 max-w-xl text-lede text-secondary sm:mt-10">
                   A year in data, from five apps I built to track it.
                 </p>

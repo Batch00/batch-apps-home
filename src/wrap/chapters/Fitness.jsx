@@ -100,7 +100,8 @@ export default function Fitness({ data, meta }) {
             <ActivityBars types={data.fitness?.by_type ?? []} at={0.5} />
           </Reveal>
 
-          <Reveal at={0.36} out={0.72}>
+          {/* Only hand over to the races beat when there is one; otherwise this beat stays up. */}
+          <Reveal at={0.36} out={races.length > 0 ? 0.72 : undefined}>
             <p className="text-eyebrow uppercase text-text-muted">Week by week</p>
             {streak && <p className="mt-5 max-w-5xl text-headline text-text-primary">{streak}</p>}
             <WeekStrip weekly={weekly} at={0.36} lastWeek={lastWeek} />

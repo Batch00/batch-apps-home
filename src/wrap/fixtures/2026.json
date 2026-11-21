@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "as_of": "2026-11-20",
+  "as_of": "2026-11-21",
   "is_partial": true,
   "version": 1,
   "totals": {
@@ -19,7 +19,7 @@
     "trips": 1,
     "days_traveled": 11,
     "places_visited": 5,
-    "data_points": 1114
+    "data_points": 1115
   },
   "monthly": [
     {
@@ -565,6 +565,15 @@
           }
         ]
       }
+    ],
+    "new_countries": [
+      "CZ",
+      "GR",
+      "HU"
+    ],
+    "new_us_states": [
+      "AZ",
+      "MT"
     ],
     "lifetime": {
       "countries": [

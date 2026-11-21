@@ -31,11 +31,15 @@ export async function loadYtd(year, signal) {
     if (!res.ok) throw new Error(`YTD request failed with ${res.status}`);
     return await res.json();
   } catch (err) {
-    // The Vite dev server has no /api, so local development falls back to the fixture.
-    // This branch is removed from production builds.
+    // The Vite dev server has no /api, so local development falls back to that year's fixture.
+    // This branch is removed from production builds, fixtures included.
     if (import.meta.env.DEV && err.name !== "AbortError") {
-      console.info("YTD: using the local fixture in development");
-      return (await import("../wrap/fixtures/2026.json")).default;
+      const fixtures = import.meta.glob("../wrap/fixtures/*.json", { import: "default" });
+      const fixture = fixtures[`../wrap/fixtures/${year}.json`];
+      if (fixture) {
+        console.info(`YTD: using the local ${year} fixture in development`);
+        return await fixture();
+      }
     }
     throw err;
   }

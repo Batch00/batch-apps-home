@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "./fixtures/2026.json";
+import fixture2025 from "./fixtures/2025.json";
 import { RULES, count, insight, insights, isChapterEligible, longestWeekStreak } from "./insights.js";
 
 const clone = () => structuredClone(fixture);
@@ -23,7 +24,7 @@ describe("insights on the 2026 fixture", () => {
     expect(Object.fromEntries(insights(fixture).map((l) => [l.id, l.text]))).toEqual({
       "data-rate": "About 3.4 a day, every day of the year so far.",
       "trip-shape": "One trip, four cities, all in September.",
-      "new-regions": "Three of them for the first time, plus two new US states.",
+      "new-regions": "Greece, Hungary and Czechia for the first time, plus Arizona and Montana.",
       "top-activity": "Ultimate Frisbee took the most time: 93.7 hours over 37 sessions, 70% of all active time.",
       "week-streak": "The longest streak: 20 weeks in a row with at least one workout.",
       "busiest-workout-month": "November was the busiest month, with 23 workouts.",
@@ -106,11 +107,35 @@ describe("rule edges", () => {
     expect(insight(d, "races")).toBeNull();
   });
 
-  it("says when every country was new, and leaves states out when there are none", () => {
+  it("names new places, and falls back to counts for payloads without the lists", () => {
     const d = clone();
-    d.totals.new_countries = d.totals.countries;
-    d.totals.new_us_states = 0;
+    d.travel.new_us_states = [];
+    expect(insight(d, "new-regions")).toBe("Greece, Hungary and Czechia for the first time.");
+    d.travel.new_countries = [];
+    d.travel.new_us_states = ["NY", "AZ"];
+    expect(insight(d, "new-regions")).toBe("Arizona and New York for the first time.");
+    d.travel.new_us_states = ["AZ", "MT", "NY", "WA", "IA"];
+    expect(insight(d, "new-regions")).toBe("Five new US states.");
+    delete d.travel.new_countries;
+    delete d.travel.new_us_states;
+    expect(insight(d, "new-regions")).toBe("Three of them for the first time, plus two new US states.");
+  });
+
+  it("says every country was a first when they all were", () => {
+    const d = clone();
+    d.travel.new_countries = ["GR", "HU", "CZ", "DE"];
+    d.travel.new_us_states = [];
     expect(insight(d, "new-regions")).toBe("Every one of them a first.");
+  });
+
+  it("shortens a long list of new countries", () => {
+    const d = clone();
+    d.totals.countries = 9;
+    d.travel.new_countries = ["GR", "HU", "CZ", "DE", "AT", "SK"];
+    d.travel.new_us_states = [];
+    expect(insight(d, "new-regions")).toBe(
+      "Six of them for the first time, among them Greece, Hungary and Czechia.",
+    );
   });
 
   it("lists the months of several trips", () => {
@@ -139,5 +164,32 @@ describe("rule edges", () => {
     expect(count(12)).toBe("twelve");
     expect(count(13)).toBe("13");
     expect(count(1114)).toBe("1,114");
+  });
+});
+
+describe("2025, a finished year", () => {
+  it("speaks in the past tense and names every first", () => {
+    expect(Object.fromEntries(insights(fixture2025).map((l) => [l.id, l.text]))).toEqual({
+      "data-rate": "About 0.6 a day, every day of the year.",
+      "trip-shape": "Two trips, 13 cities, in May and September.",
+      "new-regions": "Every one of them a first, plus Iowa, New York and Washington.",
+      "top-activity": "Run took the most time: 8.8 hours over 18 sessions, 40% of all active time.",
+      "week-streak": "The longest streak: ten weeks in a row with at least one workout.",
+      "busiest-workout-month": "December was the busiest month, with 19 workouts.",
+      "run-peak": "November was the biggest running month: 28.2 miles.",
+      "busiest-watch-month": "July was the biggest watching month, with 8 titles.",
+      "rating-habit": "4 stars was the usual verdict: 27 of 55 ratings.",
+      "top-genre": "Drama led the genres with 32 titles, ahead of Action with 13.",
+      "oldest-favorite": "The oldest favorite dates to 1943: Casablanca.",
+    });
+  });
+
+  it("never says so far", () => {
+    for (const { text } of insights(fixture2025)) expect(text).not.toMatch(/so far/i);
+  });
+
+  it("hides patterns, which has nothing to say for a year with months of no logging", () => {
+    expect(isChapterEligible("patterns", fixture2025)).toBe(false);
+    for (const id of ["opening", "travel", "fitness", "film-tv", "closing"]) expect(isChapterEligible(id, fixture2025)).toBe(true);
   });
 });

@@ -1,10 +1,15 @@
 import { pad2 } from "../format";
 
-// Chapter label, also the chapter's heading for screen readers: "02  Travel".
+// Chapter label and the chapter's heading. The number is visual only, so screen readers hear
+// just the label ("Travel").
 export function Eyebrow({ number, children, className = "" }) {
   return (
     <h2 className={`flex items-center gap-3 text-eyebrow uppercase text-text-muted ${className}`}>
-      {number != null && <span className="tabular-nums text-accent">{pad2(number)}</span>}
+      {number != null && (
+        <span aria-hidden="true" className="tabular-nums text-accent">
+          {pad2(number)}
+        </span>
+      )}
       {number != null && <span aria-hidden="true" className="h-px w-8 bg-border" />}
       <span>{children}</span>
     </h2>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RotateCw } from "lucide-react";
 import "./wrap.css";
 import { isUsable, loadYtd } from "../lib/ytd";
 import { setReducedMotion } from "./engine/scrollEngine";
@@ -34,18 +34,29 @@ function Story({ data }) {
   );
 }
 
-function Unavailable({ year }) {
+function Unavailable({ year, onRetry }) {
   return (
     <main className="flex min-h-stage flex-col justify-center px-6 sm:px-10 lg:px-16">
       <p className="mb-6 text-eyebrow uppercase text-accent">{year}</p>
       <h1 className="max-w-3xl text-headline text-text-primary">This year in review is not available right now.</h1>
-      <a
-        href="/"
-        className="mt-10 inline-flex w-fit items-center gap-2 text-caption font-medium text-secondary transition-colors hover:text-text-primary"
-      >
-        <ArrowLeft size={16} aria-hidden="true" />
-        Back to Batch Apps
-      </a>
+      <p className="mt-6 max-w-xl text-lede text-secondary">The numbers could not be loaded. Try again in a moment.</p>
+      <div className="mt-10 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-caption font-semibold text-white transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <RotateCw size={16} aria-hidden="true" />
+          Try again
+        </button>
+        <a
+          href="/"
+          className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-caption font-medium text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          Back to Batch Apps
+        </a>
+      </div>
     </main>
   );
 }
@@ -53,13 +64,19 @@ function Unavailable({ year }) {
 function Loading({ year }) {
   return (
     <main className="flex min-h-stage items-center px-6 sm:px-10 lg:px-16" aria-busy="true">
-      <p className="text-mega text-faint motion-safe:animate-pulse">{year}</p>
+      <p className="text-mega text-faint motion-safe:animate-pulse" aria-hidden="true">
+        {year}
+      </p>
+      <p className="sr-only" role="status">
+        Loading {year} in review
+      </p>
     </main>
   );
 }
 
 export default function WrapApp({ year }) {
   const [result, setResult] = useState({ status: "loading", data: null });
+  const [attempt, setAttempt] = useState(0);
   const reduced = useReducedMotion();
 
   useEffect(() => {
@@ -87,7 +104,12 @@ export default function WrapApp({ year }) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [year]);
+  }, [year, attempt]);
+
+  const retry = () => {
+    setResult({ status: "loading", data: null });
+    setAttempt((n) => n + 1);
+  };
 
   const label = result.data ? yearState(result.data).label : String(year);
   useEffect(() => {
@@ -97,7 +119,7 @@ export default function WrapApp({ year }) {
   return (
     <div className="wrap-root min-h-stage bg-background font-sans text-text-primary" data-motion={reduced ? "reduce" : "full"}>
       {result.status === "ready" && <Story data={result.data} />}
-      {result.status === "error" && <Unavailable year={year} />}
+      {result.status === "error" && <Unavailable year={year} onRetry={retry} />}
       {result.status === "loading" && <Loading year={year} />}
     </div>
   );

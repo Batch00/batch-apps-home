@@ -8,6 +8,7 @@
 // Chapter gates live here too, so "too thin to show" is decided in one place and tested with
 // the rules.
 
+import { countryName, listOf, newPlaces, stateName } from "../lib/regions.js";
 import { formatNumber, monthName, plural } from "./format.js";
 
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
@@ -38,9 +39,16 @@ function sum(list, key) {
   return list.reduce((total, item) => total + num(item[key]), 0);
 }
 
-function listOf(words) {
-  if (words.length <= 1) return words.join("");
-  return `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`;
+// The count-only line, for payloads from before the new-region lists existed.
+function newRegionCounts(totals) {
+  const { countries, new_countries: newCountries, new_us_states: newStates } = totals ?? {};
+  const parts = [];
+  if (num(newCountries) > 0) {
+    parts.push(newCountries === countries ? "Every one of them a first" : `${capitalize(count(newCountries))} of them for the first time`);
+  }
+  if (num(newStates) > 0) parts.push(`${count(newStates)} new US ${plural(newStates, "state")}`);
+  if (parts.length === 2) return `${parts[0]}, plus ${parts[1]}.`;
+  return `${capitalize(parts[0])}.`;
 }
 
 // Longest run of consecutive calendar weeks with at least one workout.
@@ -92,20 +100,27 @@ export const RULES = [
   {
     id: "new-regions",
     chapter: "travel",
-    eligible: (d) => num(d.totals?.new_countries) > 0 || num(d.totals?.new_us_states) > 0,
+    eligible: (d) => {
+      const { countries, states } = newPlaces(d);
+      return countries.length > 0 || states.length > 0 || num(d.totals?.new_countries) > 0 || num(d.totals?.new_us_states) > 0;
+    },
     line: (d) => {
-      const { countries, new_countries: newCountries, new_us_states: newStates } = d.totals;
-      const parts = [];
-      if (num(newCountries) > 0) {
-        parts.push(
-          newCountries === countries
-            ? `Every one of them a first`
-            : `${capitalize(count(newCountries))} of them for the first time`,
-        );
+      const { countries, states } = newPlaces(d);
+      // Older payloads carry counts only; say what the counts can.
+      if (!countries.length && !states.length) return newRegionCounts(d.totals);
+
+      let first = null;
+      if (countries.length) {
+        const names = countries.map(countryName);
+        if (countries.length > 1 && countries.length === num(d.totals?.countries)) first = "Every one of them a first";
+        else if (names.length <= 5) first = `${listOf(names)} for the first time`;
+        else first = `${capitalize(count(names.length))} of them for the first time, among them ${listOf(names.slice(0, 3))}`;
       }
-      if (num(newStates) > 0) parts.push(`${count(newStates)} new US ${plural(newStates, "state")}`);
-      if (parts.length === 2) return `${parts[0]}, plus ${parts[1]}.`;
-      return `${capitalize(parts[0])}.`;
+      const stateNames = states.map(stateName);
+      const statePart = stateNames.length <= 4 ? listOf(stateNames) : `${count(stateNames.length)} new US states`;
+      if (first && stateNames.length) return `${first}, plus ${statePart}.`;
+      if (first) return `${first}.`;
+      return stateNames.length <= 4 ? `${statePart} for the first time.` : `${capitalize(statePart)}.`;
     },
   },
   {

@@ -286,7 +286,7 @@ export function createGlobe(canvas, travel, timing) {
       mapCtx.globalCompositeOperation = "destination-in";
       mapCtx.translate(cx, cy);
       mapCtx.scale(cx, cy);
-      const mask = mapCtx.createRadialGradient(0, 0, 0.55, 0, 0, 1);
+      const mask = mapCtx.createRadialGradient(0, 0, 0.65, 0, 0, 1);
       mask.addColorStop(0, "rgba(0, 0, 0, 1)");
       mask.addColorStop(1, `rgba(0, 0, 0, ${1 - fade})`);
       mapCtx.fillStyle = mask;
@@ -342,6 +342,13 @@ export function createGlobe(canvas, travel, timing) {
     // the zoom (0 at the whole globe, 1 at the route view).
     const zoomShare = size.focusZoom > 1.2 ? Math.log(camera.zoom) / Math.log(size.focusZoom) : 1;
     const labelAlpha = clamp01((zoomShare - 0.6) / 0.3);
+    // Labels placed so far this frame; a label that would overlap one is tried on the other side
+    // of its dot, then skipped (the dot still shows, and the chapter text lists every city).
+    const placed = [];
+    // A round trip returns to its first city; label each city once.
+    const labeled = new Set();
+    const overlaps = (box) =>
+      placed.some((b) => box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y);
 
     for (const stop of route) {
       if (stop.startAt === null) continue;
@@ -369,9 +376,14 @@ export function createGlobe(canvas, travel, timing) {
       ctx.fillStyle = "#ffffff";
       ctx.fill();
 
-      if (labelAlpha <= 0) continue;
+      if (labelAlpha <= 0 || labeled.has(stop.city)) continue;
       const width = ctx.measureText(stop.city).width;
-      const lx = x + 10 + width > w - 6 ? x - 10 - width : x + 10;
+      const box = (left) => ({ x: left - 2, y: y - fontSize * 0.7, w: width + 4, h: fontSize * 1.4 });
+      const sides = x + 10 + width > w - 6 ? [x - 10 - width, x + 10] : [x + 10, x - 10 - width];
+      const lx = sides.find((left) => left >= 2 && left + width <= w - 2 && !overlaps(box(left)));
+      if (lx === undefined) continue;
+      placed.push(box(lx));
+      labeled.add(stop.city);
       ctx.globalAlpha = pop * labelAlpha;
       ctx.lineWidth = 3;
       ctx.strokeStyle = COLORS.labelHalo;
@@ -446,9 +458,9 @@ export function createGlobe(canvas, travel, timing) {
       size.w = w;
       size.h = h;
       size.radius = Math.min(w, h) * 0.46;
-      // Zoom that fits the route inside about 60% of the shorter side.
+      // Zoom that fits the route inside about half the shorter side, clear of the edge fade.
       size.focusZoom = focus
-        ? Math.min(7, Math.max(1, (Math.min(w, h) * 0.31) / Math.sin(focus.reach) / size.radius))
+        ? Math.min(7, Math.max(1, (Math.min(w, h) * 0.26) / Math.sin(focus.reach) / size.radius))
         : 1;
       canvas.width = mapCanvas.width = Math.round(w * size.dpr);
       canvas.height = mapCanvas.height = Math.round(h * size.dpr);
