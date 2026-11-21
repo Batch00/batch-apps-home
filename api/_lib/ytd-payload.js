@@ -62,6 +62,11 @@ function coord(value, limit) {
   return Math.round(n * 10) / 10;
 }
 
+// Two-letter region codes only, each once, in a stable order.
+function codeSet(value) {
+  return [...new Set(list(value).filter((c) => code(c) !== null))].sort();
+}
+
 function list(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -161,6 +166,9 @@ export function toPublicYtd(raw) {
               };
         }),
       })),
+      // Regions first visited this year (BatchBrain migration 0015), by code only.
+      new_countries: codeSet(travel.new_countries),
+      new_us_states: codeSet(travel.new_us_states),
       lifetime: {
         countries: list(lifetime.countries).filter((c) => code(c) !== null),
         us_states: list(lifetime.us_states).filter((c) => code(c) !== null),
