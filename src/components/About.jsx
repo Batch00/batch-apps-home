@@ -45,21 +45,12 @@ export default function About() {
             The person behind it
           </h2>
 
-          {/* Bento grid: 3 cols, right col spans 2 rows */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gridTemplateRows: "auto auto",
-              gap: "10px",
-              alignItems: "stretch",
-            }}
-          >
-            {/* Row 1, Col 1-2 — Identity card */}
+          {/* Bento grid: one column on phones; from md up, 3 cols with the right col spanning 2 rows */}
+          <div className="grid grid-cols-1 items-stretch gap-[10px] md:grid-cols-[1fr_1fr_1fr] md:grid-rows-[auto_auto]">
+            {/* Row 1, Col 1-2: Identity card */}
             <div
+              className="md:col-start-1 md:col-end-3 md:row-start-1"
               style={{
-                gridColumn: "1 / 3",
-                gridRow: "1",
                 background: "#0d1b2e",
                 border: "1px solid #162740",
                 borderRadius: "12px",
@@ -78,16 +69,8 @@ export default function About() {
               </p>
             </div>
 
-            {/* Col 3, rows 1-2 — Right column (flex stack) */}
-            <div
-              style={{
-                gridColumn: "3",
-                gridRow: "1 / 3",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
+            {/* Col 3, rows 1-2: Right column (flex stack) */}
+            <div className="flex flex-col gap-[10px] md:col-start-3 md:row-start-1 md:row-end-3">
               {/* Apps shipped */}
               <div
                 style={{
@@ -137,11 +120,10 @@ export default function About() {
               </div>
             </div>
 
-            {/* Row 2, Col 1 — Analytics stack */}
+            {/* Row 2, Col 1: Analytics stack */}
             <div
+              className="md:col-start-1 md:row-start-2"
               style={{
-                gridColumn: "1",
-                gridRow: "2",
                 background: "#111111",
                 border: "1px solid #1f1f1f",
                 borderRadius: "12px",
@@ -154,11 +136,10 @@ export default function About() {
               <Pills items={analyticsStack} />
             </div>
 
-            {/* Row 2, Col 2 — Builder stack */}
+            {/* Row 2, Col 2: Builder stack */}
             <div
+              className="md:col-start-2 md:row-start-2"
               style={{
-                gridColumn: "2",
-                gridRow: "2",
                 background: "#111111",
                 border: "1px solid #1f1f1f",
                 borderRadius: "12px",
