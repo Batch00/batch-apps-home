@@ -260,19 +260,20 @@ function TravelTile({ data }) {
   );
 }
 
-// Every year with a wrap, newest first: the open year is "so far", earlier years "in review".
+// The current year (always the main button, never a chip) and every earlier year with a wrap,
+// newest first, from FIRST_WRAP_YEAR on.
 function wrapYears(data) {
   const now = currentYear();
-  const years = [];
-  for (let year = now; year >= FIRST_WRAP_YEAR; year--) {
-    const open = year === data.year ? data.is_partial : year === now;
-    years.push({ year, label: `${year} ${open ? "so far" : "in review"}` });
-  }
-  return years;
+  const final = data.year === now && data.is_partial === false;
+  const past = [];
+  for (let year = now - 1; year >= FIRST_WRAP_YEAR; year--) past.push(year);
+  return { current: { year: now, label: `${now} ${final ? "in review" : "so far"}` }, past };
 }
 
+// One primary button for the current year, then past years as one row of small chips, so the
+// tile keeps the same height as years are added (the row only wraps once it runs out of room).
 function YearPicker({ data }) {
-  const [main, ...rest] = wrapYears(data);
+  const { current, past } = wrapYears(data);
   return (
     <nav
       aria-label="BatchWrap years"
@@ -284,24 +285,32 @@ function YearPicker({ data }) {
         {fmt(data.totals.data_points) ? `${fmt(data.totals.data_points)} data points, ` : ""}the trips, the workouts and
         every title, in one scroll.
       </p>
-      <div className="mt-5 flex flex-col gap-2 md:mt-auto md:pt-5">
+      <div className="mt-5 md:mt-auto md:pt-5">
         <a
-          href={`/${main.year}`}
-          className="group inline-flex items-center justify-between gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          href={`/${current.year}`}
+          className="group flex items-center justify-between gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
-          {main.label}
+          {current.label}
           <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </a>
-        {rest.map(({ year, label }) => (
-          <a
-            key={year}
-            href={`/${year}`}
-            className="group inline-flex items-center justify-between gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-          >
-            {label}
-            <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-          </a>
-        ))}
+        {past.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">Past years</p>
+            <ul className="flex flex-wrap gap-1.5">
+              {past.map((year) => (
+                <li key={year}>
+                  <a
+                    href={`/${year}`}
+                    aria-label={`${year} in review`}
+                    className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs font-medium tabular-nums text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  >
+                    {year}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </nav>
   );
@@ -321,7 +330,8 @@ function YtdBento({ data }) {
           <h2 id="ytd-title" className="mb-2 text-3xl font-extrabold text-text-primary md:text-4xl">
             The year in numbers
           </h2>
-          <p className="mb-10 max-w-lg text-text-muted sm:mb-12">
+          {/* One line from md up; free to wrap on phones. */}
+          <p className="mb-10 max-w-lg text-text-muted sm:mb-12 md:max-w-2xl">
             Pulled from the Batch Apps through BatchBrain. Real data, counts only.
           </p>
 
