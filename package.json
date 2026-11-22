@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:access": "node --test api/_lib/access-token.node-test.js api/_lib/access-routes.node-test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.2",
