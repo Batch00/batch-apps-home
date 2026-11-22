@@ -7,7 +7,7 @@ const APP_OPTIONS = apps.filter((app) => app.status === "Live").map((app) => app
 
 export default function RequestAccessModal() {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", apps: [], message: "" });
+  const [form, setForm] = useState({ name: "", email: "", apps: [], message: "", website: "" });
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
 
   // Deep link support: open modal if hash is #request-access
@@ -72,6 +72,7 @@ export default function RequestAccessModal() {
           name: form.name,
           email: form.email,
           message: messageWithApps,
+          website: form.website,
         }),
       });
 
@@ -134,6 +135,21 @@ export default function RequestAccessModal() {
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Honeypot: hidden from people and screen readers; bots that fill it are dropped by the API */}
+                <div className="sr-only" aria-hidden="true">
+                  <label>
+                    Website
+                    <input
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={form.website}
+                      onChange={handleChange}
+                    />
+                  </label>
+                </div>
+
                 <div>
                   <label className="block text-sm text-[#888888] mb-2">Name</label>
                   <input

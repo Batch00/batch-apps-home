@@ -1,96 +1,64 @@
 import process from "node:process";
-import { verifyAccessToken } from "./_lib/access-token.js";
-import { escapeHtml } from "./_lib/escape-html.js";
+import { createAccessRoute } from "./_lib/access-route.js";
 
-export default async function handler(req, res) {
-  const { email, name, token } = req.query;
-
-  if (typeof email !== "string" || typeof name !== "string" || !email || !name) {
-    return res.status(400).send(htmlPage("Missing required parameters: email and name."));
+// GET shows a confirmation page for a verified link; only the POST from its
+// button invites the applicant (see api/_lib/access-route.js).
+async function approve(email, name) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Approve is not configured: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing");
+    return { status: 500, message: "Internal server error." };
   }
 
-  // Nothing is sent until the link's token is verified for this email.
-  let tokenValid;
-  try {
-    tokenValid = verifyAccessToken(email, token);
-  } catch (err) {
-    console.error("Approve request token check failed:", err);
-    return res.status(500).send(htmlPage("Internal server error."));
+  // Invite user via Supabase Admin API
+  const inviteRes = await fetch(`${supabaseUrl}/auth/v1/invite`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: serviceRoleKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, redirect_to: "https://www.batch-apps.com/setup-password" }),
+  });
+
+  if (!inviteRes.ok) {
+    const error = await inviteRes.text();
+    console.error("Supabase invite error:", error);
+    return { status: 500, message: "Failed to invite user. Check the server logs." };
   }
-  if (!tokenValid) {
-    return res.status(400).send(htmlPage("This approval link is invalid."));
+
+  // Send confirmation email to requester via Resend
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "noreply@batch-apps.com",
+      to: email,
+      subject: "You have been granted access to Batch Apps",
+      text: `Hi ${name},\n\nYour access request has been approved. Check your inbox for a separate email with a link to set up your password. Once set, you can log in at any Batch Apps product using the same account.\n\n- Batch Apps`,
+    }),
+  });
+
+  if (!emailRes.ok) {
+    const error = await emailRes.text();
+    console.error("Resend error:", error);
+    return { status: 500, message: "Invite sent but confirmation email failed. Check the server logs." };
   }
 
-  try {
-    // Invite user via Supabase Admin API
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    const inviteRes = await fetch(`${supabaseUrl}/auth/v1/invite`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${serviceRoleKey}`,
-        apikey: serviceRoleKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: email, redirect_to: "https://www.batch-apps.com/setup-password" }),
-    });
-
-    if (!inviteRes.ok) {
-      const error = await inviteRes.text();
-      console.error("Supabase invite error:", error);
-      return res.status(500).send(htmlPage("Failed to invite user. Check the server logs."));
-    }
-
-    // Send confirmation email to requester via Resend
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "noreply@batch-apps.com",
-        to: email,
-        subject: "You have been granted access to Batch Apps",
-        text: `Hi ${name},\n\nYour access request has been approved. Check your inbox for a separate email with a link to set up your password. Once set, you can log in at any Batch Apps product using the same account.\n\n- Batch Apps`,
-      }),
-    });
-
-    if (!emailRes.ok) {
-      const error = await emailRes.text();
-      console.error("Resend error:", error);
-      return res.status(500).send(htmlPage("Invite sent but confirmation email failed. Check the server logs."));
-    }
-
-    return res.status(200).send(
-      htmlPage(`Access approved. ${email} has been invited and will receive a setup email.`, "green")
-    );
-  } catch (err) {
-    console.error("Approve request error:", err);
-    return res.status(500).send(htmlPage("Internal server error."));
-  }
+  return {
+    status: 200,
+    message: `Access approved. ${email} has been invited and will receive a setup email.`,
+    color: "green",
+  };
 }
 
-function htmlPage(message, color = "black") {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Batch Apps - Access Request</title>
-  <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center;
-           min-height: 100vh; margin: 0; background: #f5f5f5; }
-    .card { background: #fff; padding: 40px 48px; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-            max-width: 480px; text-align: center; }
-    p { font-size: 1.1rem; color: ${color === "green" ? "#16a34a" : "#dc2626"}; font-weight: 500; margin: 0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <p>${escapeHtml(message)}</p>
-  </div>
-</body>
-</html>`;
-}
+export default createAccessRoute({
+  action: "approve",
+  label: "Approve",
+  buttonColor: "#16a34a",
+  perform: approve,
+});

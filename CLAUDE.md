@@ -14,7 +14,7 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - Styling: Tailwind only. No external component libraries.
 - App card data lives in `src/data/apps.js` - add new apps there only.
 - Backend is Vercel serverless functions in `api/` only (shared helpers in `api/_lib/`). No other server.
-  - `api/request-access.js`, `approve-request.js`, `deny-request.js`: access requests (Resend email, Supabase admin invite).
+  - `api/request-access.js`, `approve-request.js`, `deny-request.js`: access requests (Resend email, Supabase admin invite). Approve and Deny links expire after 14 days and are signed per action (`api/_lib/access-token.js`). Opening a link only shows a confirmation page; only its button's POST acts (`api/_lib/access-route.js`). `npm run test:access` (node:test) covers both.
   - `api/ytd.js`: `GET /api/ytd?year=YYYY`, read-only from BatchBrain's `brain.public_ytd` as `site_reader` via `YTD_DATABASE_URL`. Every payload passes the allowlist in `api/_lib/ytd-payload.js`.
 - Auth: Supabase is used only for the invite password-setup overlay in `App.jsx`. No other sign-in yet.
 - Public data rule: no dollar amounts, trip names, notes, journal text, or dates finer than a month may reach a public payload or page.

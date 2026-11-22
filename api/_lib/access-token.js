@@ -3,11 +3,16 @@ import { Buffer } from "node:buffer";
 import process from "node:process";
 
 // HMAC-SHA256 tokens that authenticate the Approve and Deny links in the admin
-// notification email. The token binds an applicant's email to APPROVAL_SECRET,
-// so only someone holding the secret (the email we sent) can approve or deny.
-// Ported from BatchPort src/lib/access-token.ts.
+// notification email. Each token signs one action ("approve" or "deny"), the
+// applicant's email and name, and an expiry in unix seconds, so a link cannot
+// be reused for another action or address, and it stops working once expired.
 //
 // Server only. Files under api/_lib are not deployed as functions by Vercel.
+
+const ACTIONS = new Set(["approve", "deny"]);
+const MAX_AHEAD_SECONDS = 15 * 24 * 60 * 60;
+const EXP_PATTERN = /^[1-9]\d{0,11}$/;
+const TOKEN_PATTERN = /^[0-9a-f]{64}$/i;
 
 function getSecret() {
   const secret = process.env.APPROVAL_SECRET;
@@ -23,25 +28,35 @@ function normalizeEmail(email) {
   return email.trim().toLowerCase();
 }
 
-export function generateAccessToken(email) {
-  return crypto
-    .createHmac("sha256", getSecret())
-    .update(normalizeEmail(email))
-    .digest("hex");
+export function signAccess(action, email, name, exp) {
+  if (!ACTIONS.has(action)) {
+    throw new Error(`Unknown access action: ${action}`);
+  }
+  const message = `v2|${action}|${normalizeEmail(email)}|${name.trim()}|${exp}`;
+  return crypto.createHmac("sha256", getSecret()).update(message).digest("hex");
 }
 
-// Timing-safe comparison of a presented token against the expected one. Guards
-// against non-string input, length mismatches (timingSafeEqual throws on
-// unequal lengths) and non-hex input.
-export function verifyAccessToken(email, token) {
-  if (typeof email !== "string" || typeof token !== "string") {
+// True only for a well-formed, unexpired token signed for exactly this action,
+// email, name and expiry. The cheap shape checks run before the HMAC, and the
+// final compare is timing safe. Old links carry no exp, so they fail here.
+export function verifyAccess(action, email, name, exp, token, nowSeconds = Math.floor(Date.now() / 1000)) {
+  if (
+    typeof action !== "string" ||
+    typeof email !== "string" ||
+    typeof name !== "string" ||
+    typeof exp !== "string" ||
+    typeof token !== "string"
+  ) {
     return false;
   }
-  const expected = generateAccessToken(email);
-  const expectedBuffer = Buffer.from(expected, "hex");
-  const providedBuffer = Buffer.from(token, "hex");
-  if (expectedBuffer.length !== providedBuffer.length) {
+  if (!ACTIONS.has(action) || !EXP_PATTERN.test(exp) || !TOKEN_PATTERN.test(token)) {
     return false;
   }
-  return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+  const expSeconds = Number(exp);
+  if (expSeconds < nowSeconds || expSeconds > nowSeconds + MAX_AHEAD_SECONDS) {
+    return false;
+  }
+  const expected = Buffer.from(signAccess(action, email, name, exp), "hex");
+  const provided = Buffer.from(token, "hex");
+  return expected.length === provided.length && crypto.timingSafeEqual(expected, provided);
 }

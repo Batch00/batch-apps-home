@@ -1,18 +1,84 @@
 import process from "node:process";
-import { generateAccessToken } from "./_lib/access-token.js";
+import { signAccess } from "./_lib/access-token.js";
 import { escapeHtml } from "./_lib/escape-html.js";
 
 const MAX_NAME_LENGTH = 100;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_MESSAGE_LENGTH = 2000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LINK_LIFETIME_SECONDS = 14 * 24 * 60 * 60;
+
+// Per-IP speed bump: 5 requests per rolling hour. The map lives in this
+// function instance's memory only, so it resets on cold starts and is not
+// shared between instances. It slows a casual flood; it is not a real limit.
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const recentRequests = new Map();
+
+function clientIp(req) {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded ?? "").split(",")[0].trim();
+  return first || req.socket?.remoteAddress || "unknown";
+}
+
+// Records this request and returns the seconds to wait when the IP is over
+// the limit, or 0 when it may proceed.
+function rateLimitWait(ip, now = Date.now()) {
+  const windowStart = now - RATE_WINDOW_MS;
+  if (recentRequests.size > 10000) {
+    for (const [key, times] of recentRequests) {
+      if (times[times.length - 1] <= windowStart) recentRequests.delete(key);
+    }
+  }
+  const times = (recentRequests.get(ip) ?? []).filter((t) => t > windowStart);
+  if (times.length >= RATE_LIMIT) {
+    recentRequests.set(ip, times);
+    return Math.ceil((times[0] + RATE_WINDOW_MS - now) / 1000);
+  }
+  times.push(now);
+  recentRequests.set(ip, times);
+  return 0;
+}
+
+// A preview deployment sends its links to itself, so testing a preview never
+// approves anyone through production.
+function linkBase() {
+  const previewHost = process.env.VERCEL_URL;
+  if (process.env.VERCEL_ENV === "preview" && previewHost) {
+    return `https://${previewHost}`;
+  }
+  return "https://www.batch-apps.com";
+}
+
+function accessLink(action, email, name, exp) {
+  const query = new URLSearchParams({
+    email,
+    name,
+    exp: String(exp),
+    token: signAccess(action, email, name, exp),
+  });
+  return `${linkBase()}/api/${action}-request?${query}`;
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const wait = rateLimitWait(clientIp(req));
+  if (wait > 0) {
+    res.setHeader("Retry-After", String(wait));
+    return res.status(429).json({ error: "Too many requests" });
+  }
+
   const body = req.body && typeof req.body === "object" ? req.body : {};
+
+  // Honeypot: the form's hidden "website" field is empty for people. Answer
+  // a filled one as if it worked and send nothing.
+  if (typeof body.website === "string" && body.website !== "") {
+    return res.status(200).json({ success: true });
+  }
+
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const message = body.message;
@@ -39,12 +105,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 
-  // The Approve and Deny links carry the email and an HMAC token tying that
-  // email to APPROVAL_SECRET, so the links cannot be forged for another address.
-  const token = generateAccessToken(email);
-  const query = `email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&token=${token}`;
-  const approveUrl = `https://www.batch-apps.com/api/approve-request?${query}`;
-  const denyUrl = `https://www.batch-apps.com/api/deny-request?${query}`;
+  // Each link carries the email, name, expiry and a token signed for its own
+  // action, so a link cannot be forged, reused for the other action, or used
+  // after it expires. Opening a link only shows a confirmation page.
+  const exp = Math.floor(Date.now() / 1000) + LINK_LIFETIME_SECONDS;
+  const approveUrl = accessLink("approve", email, name, exp);
+  const denyUrl = accessLink("deny", email, name, exp);
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #222;">
@@ -67,6 +133,7 @@ export default async function handler(req, res) {
           Deny
         </a>
       </div>
+      <p style="margin-top: 16px; color: #888; font-size: 13px;">These links expire in 14 days.</p>
     </div>
   `;
 
