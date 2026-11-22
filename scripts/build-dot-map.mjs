@@ -2,16 +2,21 @@
 //
 // The home page must not load the atlases or d3-geo, so this runs once at development time and
 // commits a few kilobytes of run-length data instead. Each 2.5 degree cell whose center falls on
-// land is tagged with its country (ISO alpha-2) or, inside the US, its state (USPS code).
-// Countries too small to own a cell center get the cell under their centroid.
+// land is tagged with a region key:
+//   "FR"      a country's home territory (ISO alpha-2)
+//   "US-CA"   a US state, never a bare USPS code: CA would collide with Canada, MN with Mongolia
+//   "~FR"     a country's far-off overseas part (French Guiana), drawn as land but never lit
+// Regions too small to own a cell center get a pin: one dot at a point inside the region.
+// The rules come from src/wrap/globe/visited.js, the same module the globe uses.
 //
 // Run: node scripts/build-dot-map.mjs   (only needed if the atlases or the grid change)
 
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { geoBounds, geoCentroid, geoContains } from "d3-geo";
+import { geoArea, geoBounds, geoCentroid, geoContains } from "d3-geo";
 import { feature } from "topojson-client";
 import { COUNTRY_ID, COUNTRY_NAME_FALLBACK, STATE_FIPS } from "../src/wrap/globe/codes.js";
+import { homeParts, stateKey } from "../src/wrap/globe/visited.js";
 
 const require = createRequire(import.meta.url);
 const world = require("world-atlas/countries-110m.json");
@@ -33,10 +38,20 @@ function withBounds(features, codeOf) {
     .filter((x) => x.code);
 }
 
-const countries = withBounds(feature(world, world.objects.countries).features, (f) =>
-  f.id ? alpha2ByNumeric.get(f.id) : alpha2ByName.get(f.properties?.name),
-).filter((x) => x.code !== "AQ");
-const states = withBounds(feature(us, us.objects.states).features, (f) => uspsByFips.get(f.id));
+// Each country becomes its home territory, plus (when it has any) an overseas region.
+const countryFeatures = feature(world, world.objects.countries).features.flatMap((f) => {
+  const code = f.id ? alpha2ByNumeric.get(f.id) : alpha2ByName.get(f.properties?.name);
+  if (!code || code === "AQ") return [];
+  const { home, overseas } = homeParts(f.geometry);
+  const out = [{ ...f, properties: { key: code }, geometry: { type: "MultiPolygon", coordinates: home } }];
+  if (overseas.length) out.push({ ...f, properties: { key: `~${code}` }, geometry: { type: "MultiPolygon", coordinates: overseas } });
+  return out;
+});
+const countries = withBounds(countryFeatures, (f) => f.properties.key);
+const states = withBounds(feature(us, us.objects.states).features, (f) => {
+  const usps = uspsByFips.get(f.id);
+  return usps ? stateKey(usps) : null;
+});
 
 function inBounds(lon, lat, [[x0, y0], [x1, y1]]) {
   if (lat < y0 || lat > y1) return false;
@@ -47,7 +62,7 @@ function regionAt(lon, lat) {
   const point = [lon, lat];
   const country = countries.find((c) => inBounds(lon, lat, c.bounds) && geoContains(c.f, point));
   if (!country) return null;
-  if (country.code === "US") {
+  if (country.code === "US" || country.code === "~US") {
     const state = states.find((s) => inBounds(lon, lat, s.bounds) && geoContains(s.f, point));
     return state?.code ?? "US";
   }
@@ -66,30 +81,36 @@ for (let row = 0; row < ROWS; row++) {
   }
 }
 
-// Small countries and states that no cell center landed in still get one dot: the cell under
-// their centroid, or a neighbor, but never a region's last remaining dot.
-const counts = new Map();
-for (const code of grid.flat()) if (code) counts.set(code, (counts.get(code) ?? 0) + 1);
-const canTake = (row, col) => {
-  if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return false;
-  const owner = grid[row][col];
-  return !owner || owner === "US" || counts.get(owner) > 1;
-};
+// Small countries and states that own no cell center get a pin instead: one dot drawn at a point
+// inside the region itself, on top of the grid. Borrowing a neighbor's cell would put the dot in
+// another country (a 2.5 degree cell center near Czechia lies in Austria).
+const present = new Set(grid.flat().filter(Boolean));
+const pins = [];
+const round = (v) => Math.round(v * 10) / 10;
 for (const region of [...countries, ...states]) {
-  if (counts.has(region.code) || region.code === "US") continue;
-  const [lon, lat] = geoCentroid(region.f);
-  if (lat > TOP || lat < BOTTOM) continue;
-  const [row, col] = cellOf(lon, lat);
-  const spot = [[0, 0], [0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
-    .map(([dr, dc]) => [row + dr, col + dc])
-    .find(([r, c]) => canTake(r, c));
-  if (!spot) continue;
-  const owner = grid[spot[0]][spot[1]];
-  if (owner) counts.set(owner, counts.get(owner) - 1);
-  grid[spot[0]][spot[1]] = region.code;
-  counts.set(region.code, 1);
+  if (present.has(region.code) || region.code === "US" || region.code.startsWith("~")) continue;
+  const polygons = region.f.geometry.type === "MultiPolygon" ? region.f.geometry.coordinates : [region.f.geometry.coordinates];
+  const largest = polygons.reduce((best, p) => (geoArea({ type: "Polygon", coordinates: p }) > geoArea({ type: "Polygon", coordinates: best }) ? p : best));
+  const centers = [geoCentroid(region.f), geoCentroid({ type: "Polygon", coordinates: largest })];
+  // The centroid, else the nearest inside point on a 0.1 degree lattice around it (narrow or
+  // hooked shapes can have their centroid outside).
+  const candidates = centers.map(([lon, lat]) => [round(lon), round(lat)]);
+  for (let r = 1; r <= 15; r++) {
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === r) candidates.push([round(candidates[1][0] + dx / 10), round(candidates[1][1] + dy / 10)]);
+      }
+    }
+  }
+  const point = candidates.find((p) => geoContains(region.f, p));
+  if (!point) {
+    console.warn(`no inside point for ${region.code}; left without a dot`);
+    continue;
+  }
+  if (point[1] > TOP || point[1] < BOTTOM) continue;
+  pins.push([point[0], point[1], region.code]);
+  present.add(region.code);
 }
-const present = new Set(counts.keys());
 
 // Run-length encode each row as [startCol, length, code] triples.
 const runs = grid.map((cells) => {
@@ -106,15 +127,18 @@ const runs = grid.map((cells) => {
 
 const body = `// Generated by scripts/build-dot-map.mjs from world-atlas 110m and us-atlas 10m. Do not edit.
 // A ${STEP} degree dot grid, ${COLS} columns from 180W and ${ROWS} rows from ${TOP}N. Each row lists
-// [startColumn, length, region] runs, where region is an ISO country code or a USPS state code.
+// [startColumn, length, key] runs. Keys: "FR" a country's home territory, "US-CA" a US state,
+// "~FR" a country's far-off overseas part (never lit), "US" US land outside any state shape.
+// pins: [lon, lat, key] for regions too small to own a cell center, drawn at that exact point.
 export const DOT_MAP = {
   step: ${STEP},
   top: ${TOP},
   cols: ${COLS},
   rows: ${ROWS},
   runs: ${JSON.stringify(runs)},
+  pins: ${JSON.stringify(pins)},
 };
 `;
 writeFileSync(new URL("../src/lib/dotMap.js", import.meta.url), body);
 const dots = runs.flat().reduce((n, r) => n + r[1], 0);
-console.log(`dotMap.js: ${dots} land dots, ${present.size} regions, ${body.length} bytes`);
+console.log(`dotMap.js: ${dots} land dots, ${pins.length} pins, ${present.size} regions, ${body.length} bytes`);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Clapperboard, Dumbbell, Plane, Star } from "lucide-react";
 import { useFadeIn } from "../hooks/useFadeIn";
-import { currentYear, formatAsOf, isUsable, loadYtd } from "../lib/ytd";
+import { FIRST_WRAP_YEAR, currentYear, formatAsOf, isUsable, loadYtd } from "../lib/ytd";
 import { countryName, newPlaces, stateName } from "../lib/regions";
 import DotMap from "./ytd/DotMap";
 
@@ -32,14 +32,25 @@ function Label({ icon: Icon, children }) {
   );
 }
 
-// One thin bar per calendar week, the busiest weeks tallest.
-function WeekStrip({ weekly }) {
+// A number with a short caption under it, for the stat rows inside tiles.
+function Stat({ value, label }) {
+  if (value == null) return null;
+  return (
+    <div>
+      <p className="text-xl font-bold tabular-nums leading-none text-text-primary sm:text-2xl">{value}</p>
+      <p className="mt-1 text-xs text-text-muted">{label}</p>
+    </div>
+  );
+}
+
+// One thin bar per calendar week, the busiest weeks tallest. Fills whatever height it gets.
+function WeekStrip({ weekly, className = "" }) {
   const byWeek = new Map((weekly ?? []).map((w) => [w.week, w.workouts ?? 0]));
   const last = Math.max(0, ...byWeek.keys());
   const max = Math.max(1, ...byWeek.values());
   const weeks = Array.from({ length: 52 }, (_, i) => i + 1);
   return (
-    <div className="mt-6 flex h-14 items-end gap-[2px] sm:h-16 md:h-auto md:min-h-16 md:flex-1" aria-hidden="true">
+    <div className={`flex items-end gap-[2px] ${className}`} aria-hidden="true">
       {weeks.map((week) => {
         const value = byWeek.get(week);
         if (week > last || value == null) return <span key={week} className="h-px flex-1 bg-border" />;
@@ -55,177 +66,201 @@ function WeekStrip({ weekly }) {
   );
 }
 
-function PosterTile({ title }) {
+function Poster({ title, featured }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(title.poster_path) && !failed;
   return (
-    <Tile className="flex flex-col p-0 sm:p-0">
-      <div className="relative aspect-[2/3] w-full bg-[#161616]">
+    <li className={`relative overflow-hidden rounded-md bg-[#161616] ring-1 ring-inset ring-border ${featured ? "flex-[1.35]" : "flex-1"}`}>
+      <div className="aspect-[2/3]">
         {showImage ? (
           <img
             src={`${TMDB_IMAGE}${title.poster_path}`}
-            alt={`Poster for ${title.title}`}
+            alt={title.title}
             width={342}
             height={513}
             loading="lazy"
             decoding="async"
             onError={() => setFailed(true)}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-end p-4">
-            <p className="text-lg font-bold leading-tight text-text-primary">{title.title}</p>
-          </div>
+          <p className="flex h-full items-end p-1.5 text-[10px] font-semibold leading-tight text-text-primary sm:p-2 sm:text-xs">
+            {title.title}
+          </p>
         )}
       </div>
-      <div className="p-4 sm:p-5">
-        <Label icon={Star}>Top rated</Label>
-        <p className="text-sm font-semibold leading-snug text-text-primary sm:text-base">{title.title}</p>
-        <p className="mt-1 text-xs text-text-muted">
-          {[title.media_type === "tv" ? "TV" : "Film", title.release_year].filter(Boolean).join(" · ")}
-          {typeof title.rating === "number" && (
-            <span className="text-accent"> · {fmt(title.rating, 1)} stars</span>
-          )}
-        </p>
+    </li>
+  );
+}
+
+function WorkoutsTile({ data }) {
+  const t = data.totals;
+  return (
+    <Tile className="flex flex-col md:order-1 md:col-span-7">
+      <Label icon={Dumbbell}>Workouts</Label>
+      <p className="text-5xl font-extrabold tabular-nums leading-none text-text-primary sm:text-6xl">{fmt(t.workouts) ?? "0"}</p>
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+        <Stat value={fmt(t.active_hours, 1)} label="active hours" />
+        <Stat value={fmt(t.miles_run, 1)} label="miles run" />
+        {t.races > 0 && <Stat value={fmt(t.races)} label={plural(t.races, "race")} />}
+      </div>
+      {/* Phones: a fixed, short strip. Desktop: the strip takes the rest of the tile's height. */}
+      <WeekStrip weekly={data.weekly} className="mt-5 h-12 md:h-auto md:min-h-10 md:flex-1" />
+      <p className="mt-2 text-[11px] text-text-muted">Each bar is one week.</p>
+    </Tile>
+  );
+}
+
+function FilmTile({ data }) {
+  const t = data.totals;
+  const titles = (data.media?.top_titles ?? []).slice(0, 5);
+  const [top] = titles;
+  return (
+    <Tile className="flex flex-col md:order-4 md:col-span-7">
+      <Label icon={Clapperboard}>Film and TV</Label>
+      {titles.length > 0 && (
+        <ol className="flex items-end gap-1.5 sm:gap-2" aria-label="Top rated this year">
+          {titles.map((title, i) => (
+            <Poster key={title.tmdb_id ?? title.title} title={title} featured={i === 0} />
+          ))}
+        </ol>
+      )}
+      <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+        <Stat value={fmt(t.titles)} label={plural(t.titles, "title")} />
+        <Stat
+          value={`${fmt(t.movies) ?? 0} / ${fmt(t.shows) ?? 0}`}
+          label={`${plural(t.movies, "movie")} / ${plural(t.shows, "show")}`}
+        />
+        {typeof t.avg_rating === "number" && (
+          <div>
+            <p className="flex items-center gap-1.5 text-xl font-bold tabular-nums leading-none text-text-primary sm:text-2xl">
+              {t.avg_rating.toFixed(1)}
+              <Star size={16} className="fill-accent text-accent" aria-hidden="true" />
+            </p>
+            <p className="mt-1 text-xs text-text-muted">average rating</p>
+          </div>
+        )}
+        {top && (
+          <p className="text-xs text-text-muted sm:ml-auto sm:text-right">
+            Top rated: <span className="font-semibold text-text-primary">{top.title}</span>
+          </p>
+        )}
       </div>
     </Tile>
   );
 }
 
-function YtdBento({ data }) {
-  const ref = useFadeIn();
+function TravelTile({ data }) {
   const t = data.totals;
-  const year = data.year;
-  const asOf = formatAsOf(data.as_of);
-  const top = data.media?.top_titles?.[0];
   const fresh = newPlaces(data);
   const chips = [...fresh.countries.map(countryName), ...fresh.states.map(stateName)];
-  const lifetimeCountries = data.travel?.lifetime?.countries ?? [];
-  const lifetimeStates = data.travel?.lifetime?.us_states ?? [];
-  const lifetime = [...lifetimeCountries, ...lifetimeStates];
-  const freshCodes = [...fresh.countries, ...fresh.states];
-  const wrapLabel = data.is_partial ? `${year} so far` : `${year} in review`;
+  const lifetimeCountries = data.travel?.lifetime?.countries?.length ?? 0;
+  const lifetimeStates = data.travel?.lifetime?.us_states?.length ?? 0;
+  return (
+    <Tile className="flex flex-col md:order-3 md:col-span-5">
+      <Label icon={Plane}>Travel</Label>
+      <div className="flex flex-wrap gap-x-6 gap-y-3">
+        <Stat value={fmt(t.countries) ?? "0"} label={plural(t.countries, "country", "countries")} />
+        <Stat value={fmt(t.days_traveled) ?? "0"} label={`${plural(t.days_traveled, "day")} away`} />
+        {t.places_visited > 0 && <Stat value={fmt(t.places_visited)} label={plural(t.places_visited, "place")} />}
+      </div>
+      {/* Phones: a fixed-shape map. Desktop: the map takes the rest of the tile's height. */}
+      <DotMap data={data} aspect={null} className="mt-4 aspect-[2.2] w-full md:aspect-auto md:min-h-28 md:flex-1" />
+      <div className="mt-4 flex flex-wrap items-center gap-1.5">
+        {chips.length > 0 && (
+          <>
+            <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-text-muted">New this year</span>
+            <ul className="contents" aria-label="New this year">
+              {chips.map((name) => (
+                <li key={name} className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-text-primary">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <span className="text-[11px] text-text-muted sm:ml-auto">
+          Lifetime: {lifetimeCountries} {plural(lifetimeCountries, "country", "countries")}, {lifetimeStates} US{" "}
+          {plural(lifetimeStates, "state")}
+        </span>
+      </div>
+    </Tile>
+  );
+}
+
+// Every year with a wrap, newest first: the open year is "so far", earlier years "in review".
+function wrapYears(data) {
+  const now = currentYear();
+  const years = [];
+  for (let year = now; year >= FIRST_WRAP_YEAR; year--) {
+    const open = year === data.year ? data.is_partial : year === now;
+    years.push({ year, label: `${year} ${open ? "so far" : "in review"}` });
+  }
+  return years;
+}
+
+function YearPicker({ data }) {
+  const [main, ...rest] = wrapYears(data);
+  return (
+    <nav
+      aria-label="BatchWrap years"
+      className="flex flex-col rounded-xl border border-accent/40 bg-[radial-gradient(ellipse_at_100%_0%,rgba(59,130,246,0.22),transparent_65%)] p-5 sm:p-6 md:order-2 md:col-span-5"
+    >
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-accent sm:text-xs">BatchWrap</p>
+      <p className="text-2xl font-extrabold leading-tight text-text-primary">The year, as a story</p>
+      <p className="mt-2 text-sm text-text-muted">
+        {fmt(data.totals.data_points) ? `${fmt(data.totals.data_points)} data points, ` : ""}the trips, the workouts and
+        every title, in one scroll.
+      </p>
+      <div className="mt-5 flex flex-col gap-2 md:mt-auto md:pt-5">
+        <a
+          href={`/${main.year}`}
+          className="group inline-flex items-center justify-between gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+          {main.label}
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </a>
+        {rest.map(({ year, label }) => (
+          <a
+            key={year}
+            href={`/${year}`}
+            className="group inline-flex items-center justify-between gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+          >
+            {label}
+            <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+function YtdBento({ data }) {
+  const ref = useFadeIn();
+  const asOf = formatAsOf(data.as_of);
+  const top = data.media?.top_titles?.[0];
+  const wrapLabel = data.is_partial ? `${data.year} so far` : `${data.year} in review`;
 
   return (
     <section id="ytd" aria-labelledby="ytd-title" className="border-t border-[#1f1f1f] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div ref={ref} className="fade-in-section">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#3b82f6]">{wrapLabel}</p>
-          <div className="mb-10 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 id="ytd-title" className="mb-2 text-3xl font-extrabold text-text-primary md:text-4xl">
-                The year in numbers
-              </h2>
-              <p className="max-w-lg text-text-muted">Pulled from the Batch Apps through BatchBrain. Real data, counts only.</p>
-            </div>
-            <a
-              href={`/${year}`}
-              className="group inline-flex w-fit items-center gap-2 text-sm font-semibold text-accent transition-colors hover:text-accent-hover focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-            >
-              Open the full story
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-            </a>
-          </div>
+          <h2 id="ytd-title" className="mb-2 text-3xl font-extrabold text-text-primary md:text-4xl">
+            The year in numbers
+          </h2>
+          <p className="mb-10 max-w-lg text-text-muted sm:mb-12">
+            Pulled from the Batch Apps through BatchBrain. Real data, counts only.
+          </p>
 
-          {/* Bento: phones 2 columns, desktop 3. Workouts and the map are wide, the poster is tall. */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
-            <Tile className="col-span-2 flex flex-col">
-              <Label icon={Dumbbell}>Workouts</Label>
-              <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-5xl font-extrabold tabular-nums leading-none text-text-primary sm:text-6xl">
-                  {fmt(t.workouts) ?? "0"}
-                </span>
-                {fmt(t.active_hours, 1) && (
-                  <span className="text-sm text-text-muted sm:text-base">{fmt(t.active_hours, 1)} active hours</span>
-                )}
-              </p>
-              <WeekStrip weekly={data.weekly} />
-              <p className="mt-2 text-[11px] text-text-muted">Each bar is one week.</p>
-            </Tile>
-
-            {top ? (
-              <div className="row-span-2">
-                <PosterTile title={top} />
-              </div>
-            ) : (
-              <Tile className="row-span-2">
-                <Label icon={Clapperboard}>Titles</Label>
-                <p className="text-4xl font-extrabold tabular-nums text-text-primary">{fmt(t.titles) ?? "0"}</p>
-              </Tile>
-            )}
-
-            <Tile className="flex flex-col justify-between">
-              <Label icon={Clapperboard}>Watched</Label>
-              <div>
-                <p className="text-3xl font-extrabold tabular-nums leading-none text-text-primary md:text-5xl">{fmt(t.titles) ?? "0"}</p>
-                <p className="mt-2 text-xs text-text-muted sm:text-sm">
-                  {fmt(t.movies) ?? 0} {plural(t.movies, "movie")}, {fmt(t.shows) ?? 0} {plural(t.shows, "show")}
-                </p>
-                {fmt(t.avg_rating, 1) && (
-                  <p className="mt-3 hidden items-center gap-1.5 text-sm text-text-muted md:flex">
-                    <Star size={14} className="fill-accent text-accent" aria-hidden="true" />
-                    {t.avg_rating.toFixed(1)} average rating
-                  </p>
-                )}
-              </div>
-            </Tile>
-
-            <Tile className="flex flex-col justify-between">
-              <Label icon={Plane}>Travel</Label>
-              <div>
-                <p className="text-3xl font-extrabold tabular-nums leading-none text-text-primary md:text-5xl">{fmt(t.countries) ?? "0"}</p>
-                <p className="mt-2 text-xs text-text-muted sm:text-sm">
-                  {plural(t.countries, "country", "countries")}, {fmt(t.days_traveled) ?? 0} {plural(t.days_traveled, "day")} away
-                </p>
-                {fmt(t.places_visited) && (
-                  <p className="mt-3 hidden text-sm text-text-muted md:block">
-                    {fmt(t.places_visited)} {plural(t.places_visited, "place")} visited
-                  </p>
-                )}
-              </div>
-            </Tile>
-
-            <Tile className="col-span-2">
-              <Label>
-                Lifetime: {lifetimeCountries.length} {plural(lifetimeCountries.length, "country", "countries")},{" "}
-                {lifetimeStates.length} US {plural(lifetimeStates.length, "state")}
-              </Label>
-              {/* The grid behind this map loads only when the tile nears the screen. */}
-              <DotMap lifetime={lifetime} fresh={freshCodes} />
-              {chips.length > 0 && (
-                <div className="mt-4">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">New this year</p>
-                  <ul className="flex flex-wrap gap-1.5" aria-label="New this year">
-                    {chips.map((name) => (
-                      <li key={name} className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-medium text-text-primary">
-                        {name}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Tile>
-
-            {/* The trailer's call to action. */}
-            <a
-              href={`/${year}`}
-              className="group col-span-2 flex flex-col justify-between rounded-xl border border-accent/40 bg-[radial-gradient(ellipse_at_100%_0%,rgba(59,130,246,0.22),transparent_65%)] p-5 transition-colors hover:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent sm:p-6 md:col-span-1"
-            >
-              <div>
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-accent sm:text-xs">BatchWrap</p>
-                <p className="text-2xl font-extrabold leading-tight text-text-primary">
-                  {data.is_partial ? `Watch ${year} unfold` : `Relive ${year}`}
-                </p>
-                <p className="mt-2 text-sm text-text-muted">
-                  {fmt(t.data_points) ? `${fmt(t.data_points)} data points, ` : ""}one scroll: the trips, the
-                  workouts and every title.
-                </p>
-              </div>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-accent group-hover:text-accent-hover">
-                Open {wrapLabel}
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              </span>
-            </a>
+          {/* Bento: one column on phones (workouts, film, travel, then the year picker); from md a
+              12-column grid, workouts (7) beside the picker (5), then travel (5) beside film (7).
+              In each row the part that grows (the week bars, the map) takes any extra height. */}
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-12">
+            <WorkoutsTile data={data} />
+            <FilmTile data={data} />
+            <TravelTile data={data} />
+            <YearPicker data={data} />
           </div>
 
           <p className="mt-5 text-xs text-text-muted">

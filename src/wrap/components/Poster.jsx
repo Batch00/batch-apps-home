@@ -10,7 +10,8 @@ export function Poster({ title, path, year, className = "" }) {
   const showImage = Boolean(path) && !failed;
 
   return (
-    <div className={`relative aspect-[2/3] overflow-hidden rounded-md bg-surface ring-1 ring-inset ring-border ${className}`}>
+    // data-no-nav: tapping a poster (or its fallback card) never moves the story.
+    <div data-no-nav className={`relative aspect-[2/3] overflow-hidden rounded-md bg-surface ring-1 ring-inset ring-border ${className}`}>
       {showImage ? (
         <img
           src={`${TMDB_IMAGE}${path}`}

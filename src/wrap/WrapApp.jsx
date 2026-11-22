@@ -4,6 +4,7 @@ import "./wrap.css";
 import { isUsable, loadYtd } from "../lib/ytd";
 import { setReducedMotion } from "./engine/scrollEngine";
 import { useReducedMotion } from "./engine/useReducedMotion";
+import { useBeatNavigation } from "./engine/useBeatNavigation";
 import { chaptersFor } from "./chapters";
 import { ChapterRail, TopBar } from "./components/Chrome";
 import { yearState } from "./format";
@@ -17,9 +18,10 @@ function withPreviewState(data) {
   return forced === "final" ? { ...data, is_partial: false } : data;
 }
 
-function Story({ data }) {
+function Story({ data, reduced }) {
   const state = useMemo(() => yearState(data), [data]);
   const chapters = useMemo(() => chaptersFor(data), [data]);
+  useBeatNavigation({ chapters, data, reduced });
 
   return (
     <>
@@ -118,7 +120,7 @@ export default function WrapApp({ year }) {
 
   return (
     <div className="wrap-root min-h-stage bg-background font-sans text-text-primary" data-motion={reduced ? "reduce" : "full"}>
-      {result.status === "ready" && <Story data={result.data} />}
+      {result.status === "ready" && <Story data={result.data} reduced={reduced} />}
       {result.status === "error" && <Unavailable year={year} onRetry={retry} />}
       {result.status === "loading" && <Loading year={year} />}
     </div>

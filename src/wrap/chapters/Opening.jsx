@@ -1,6 +1,7 @@
-import { ChevronDown, Clapperboard, Dumbbell, Plane } from "lucide-react";
+import { Clapperboard, Dumbbell, Plane } from "lucide-react";
 import { Beats, Chapter, Frame } from "../components/Chapter";
 import { CountUp, Reveal, Scrub } from "../components/motion";
+import { NavHint } from "../components/NavHint";
 import { formatNumber, plural } from "../format";
 import { insight } from "../insights";
 
@@ -78,14 +79,7 @@ export default function Opening({ data, meta, state }) {
         </Beats>
       </Frame>
 
-      <div data-motion-only aria-hidden="true" className="absolute inset-x-0 bottom-8 flex justify-center">
-        <Scrub at={0} span={0.1} opacity={[1, 0]}>
-          <div className="wrap-bob flex flex-col items-center gap-2 text-eyebrow uppercase text-text-muted">
-            Scroll
-            <ChevronDown size={16} />
-          </div>
-        </Scrub>
-      </div>
+      <NavHint />
     </Chapter>
   );
 }

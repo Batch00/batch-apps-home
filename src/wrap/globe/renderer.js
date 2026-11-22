@@ -24,7 +24,7 @@ import { geoCentroid, geoDistance, geoGraticule10, geoInterpolate, geoOrthograph
 import { feature } from "topojson-client";
 import world from "world-atlas/countries-110m.json";
 import usStates from "us-atlas/states-10m.json";
-import { COUNTRY_ID, COUNTRY_NAME_FALLBACK, STATE_FIPS } from "./codes";
+import { visitedRegions } from "./visited";
 
 const TAU = Math.PI * 2;
 const MAX_DPR = 2;
@@ -85,22 +85,9 @@ function polygons(collection) {
   return list;
 }
 
-function subset(topology, object, keep) {
-  return feature(topology, { type: "GeometryCollection", geometries: object.geometries.filter(keep) });
-}
-
 function buildLayers(travel) {
-  const countryIds = new Set();
-  const countryNames = new Set();
-  for (const code of travel?.lifetime?.countries ?? []) {
-    if (COUNTRY_ID.has(code)) countryIds.add(COUNTRY_ID.get(code));
-    if (COUNTRY_NAME_FALLBACK.has(code)) countryNames.add(COUNTRY_NAME_FALLBACK.get(code));
-  }
-  const stateIds = new Set((travel?.lifetime?.us_states ?? []).map((code) => STATE_FIPS.get(code)).filter(Boolean));
-  const countries = subset(world, world.objects.countries, (g) =>
-    g.id ? countryIds.has(g.id) : countryNames.has(g.properties?.name),
-  );
-  const states = subset(usStates, usStates.objects.states, (g) => stateIds.has(g.id));
+  // Countries and states are matched in separate namespaces, home territory only (visited.js).
+  const { countries, states } = visitedRegions(travel, world, usStates);
 
   return {
     land: polygons(feature(world, world.objects.land)),

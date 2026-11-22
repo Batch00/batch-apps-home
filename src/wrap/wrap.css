@@ -25,6 +25,8 @@
 
 .wrap-root {
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Tapping the stage moves between beats; no grey flash on phones. */
+  -webkit-tap-highlight-color: transparent;
   --exit: 280ms cubic-bezier(0.4, 0, 1, 1);
   overflow-x: clip;
   font-feature-settings: "cv11", "ss01";

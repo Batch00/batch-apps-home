@@ -14,6 +14,10 @@ const STATES = {
   MP: "Northern Mariana Islands", PR: "Puerto Rico", VI: "US Virgin Islands",
 };
 
+// US states share a namespace with countries on the dot map, and several USPS codes are also
+// ISO country codes (CA, MN, LA, GA, AL, AZ, TN...), so a state is always keyed as "US-XX".
+export const stateKey = (code) => `US-${code}`;
+
 let displayNames = null;
 
 export function countryName(code) {
