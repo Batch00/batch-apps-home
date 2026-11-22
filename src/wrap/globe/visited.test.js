@@ -49,5 +49,11 @@ describe("globe region spot checks", () => {
     const france = countries.features.find((f) => f.properties.code === "FR");
     expect(geoContains(france, [2.35, 48.86])).toBe(true); // Paris
     expect(geoContains(france, [-53, 4])).toBe(false); // French Guiana
+    const norway = countries.features.find((f) => f.properties.code === "NO");
+    expect(geoContains(norway, [10.75, 59.91])).toBe(true); // Oslo
+    for (const polygon of norway.geometry.coordinates) {
+      const [, lat] = geoCentroid({ type: "Polygon", coordinates: polygon });
+      expect(lat, "Svalbard").toBeLessThan(74);
+    }
   });
 });

@@ -6,10 +6,12 @@ import { useEffect, useRef } from "react";
 // reader had scrolled there, and ordinary scrolling keeps working. Up and Down arrows, Page Up and
 // Page Down keep their native scrolling. Under reduced motion the page jumps instead.
 //
-// Links, buttons, posters, the top bar and the chapter rail keep their own behavior, and so does
-// selecting text.
+// Only real interactive elements keep a tap for themselves: links, buttons, form fields, and
+// anything with a button role or a tabindex. Images, posters, cards and text all navigate, so no
+// part of a beat (a poster wall filling a phone screen, say) can trap the reader. Selecting text
+// is left alone too.
 
-const IGNORE_CLICKS = "a, button, input, select, textarea, label, summary, [role='button'], [contenteditable], img, header, nav, [data-no-nav]";
+const IGNORE_CLICKS = "a, button, input, select, textarea, [role='button'], [tabindex]";
 const IGNORE_KEYS = "a, button, input, select, textarea, [contenteditable]";
 // Space under the fixed top bar when jumping to a beat on the flattened (reduced motion) page.
 const TOP_BAR = 72;

@@ -90,10 +90,10 @@ export default function RequestAccessModal() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button: a compact pill in the corner on phones, so it covers as little as possible */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-8 right-8 z-40 bg-[#3b82f6] hover:bg-[#60a5fa] text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-[#3b82f6]/20 hover:shadow-[#3b82f6]/40 transition-all"
+        className="fixed bottom-4 right-4 z-40 bg-[#3b82f6] hover:bg-[#60a5fa] text-white font-semibold text-xs px-3.5 py-2 rounded-full shadow-lg shadow-[#3b82f6]/20 hover:shadow-[#3b82f6]/40 transition-all sm:bottom-8 sm:right-8 sm:text-sm sm:px-6 sm:py-3"
       >
         Request Access
       </button>

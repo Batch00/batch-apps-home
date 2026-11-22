@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Clapperboard, Dumbbell, Plane, Star } from "lucide-react";
 import { useFadeIn } from "../hooks/useFadeIn";
 import { FIRST_WRAP_YEAR, currentYear, formatAsOf, isUsable, loadYtd } from "../lib/ytd";
@@ -43,25 +43,94 @@ function Stat({ value, label }) {
   );
 }
 
-// One thin bar per calendar week, the busiest weeks tallest. Fills whatever height it gets.
-function WeekStrip({ weekly, className = "" }) {
+const MONTH_INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const WEEKS = 52;
+
+// Week (0-based column) in which each month starts, for the month initials under the chart.
+function monthColumns(year) {
+  return MONTH_INITIALS.map((_, month) => {
+    const day = (Date.UTC(year, month, 1) - Date.UTC(year, 0, 1)) / 86400000;
+    return Math.min(WEEKS - 1, Math.floor(day / 7));
+  });
+}
+
+// One bar per calendar week, the busiest weeks tallest, with month initials underneath. Hover (or
+// tap, on a phone) shows the week and its workout count. Fills whatever height it gets.
+function WeekChart({ weekly, year, className = "" }) {
   const byWeek = new Map((weekly ?? []).map((w) => [w.week, w.workouts ?? 0]));
   const last = Math.max(0, ...byWeek.keys());
   const max = Math.max(1, ...byWeek.values());
-  const weeks = Array.from({ length: 52 }, (_, i) => i + 1);
+  const weeks = Array.from({ length: WEEKS }, (_, i) => i + 1);
+  const [active, setActive] = useState(null);
+  const hideTimer = useRef(0);
+
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
+  const weekAt = (event) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    const week = Math.min(WEEKS, Math.max(1, Math.floor(((event.clientX - box.left) / box.width) * WEEKS) + 1));
+    return byWeek.has(week) && week <= last ? week : null;
+  };
+  const onPointerMove = (event) => {
+    if (event.pointerType === "mouse") setActive(weekAt(event));
+  };
+  const onPointerDown = (event) => {
+    if (event.pointerType === "mouse") return;
+    setActive(weekAt(event));
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setActive(null), 2500);
+  };
+
+  const count = active ? byWeek.get(active) : 0;
+  const center = active ? ((active - 0.5) / WEEKS) * 100 : 0;
+  const tipPosition =
+    center < 15 ? { left: 0 } : center > 85 ? { right: 0 } : { left: `${center}%`, transform: "translateX(-50%)" };
+
   return (
-    <div className={`flex items-end gap-[2px] ${className}`} aria-hidden="true">
-      {weeks.map((week) => {
-        const value = byWeek.get(week);
-        if (week > last || value == null) return <span key={week} className="h-px flex-1 bg-border" />;
-        return (
+    <div className={`flex flex-col ${className}`}>
+      <div
+        className="relative flex flex-1 touch-pan-y items-end gap-[2px]"
+        onPointerMove={onPointerMove}
+        onPointerLeave={() => setActive(null)}
+        onPointerDown={onPointerDown}
+      >
+        {weeks.map((week) => {
+          const value = byWeek.get(week);
+          if (week > last || value == null) return <span key={week} aria-hidden="true" className="h-px flex-1 bg-border" />;
+          return (
+            <span
+              key={week}
+              aria-hidden="true"
+              className={`flex-1 rounded-t-[1px] transition-colors ${
+                week === active ? "bg-accent-hover" : value > 0 ? "bg-accent/70" : "bg-border"
+              }`}
+              style={{ height: `${value > 0 ? Math.max(6, (value / max) * 100) : 3}%` }}
+            />
+          );
+        })}
+        {active && (
+          <p
+            className="pointer-events-none absolute -top-1 whitespace-nowrap rounded-md border border-border bg-[#0a0a0a]/95 px-2 py-1 text-[11px] font-medium text-text-primary shadow-lg"
+            style={tipPosition}
+          >
+            Week {active}: {count} {plural(count, "workout")}
+          </p>
+        )}
+      </div>
+      <div className="relative mt-1.5 h-3.5" aria-hidden="true">
+        {monthColumns(year).map((column, month) => (
           <span
-            key={week}
-            className={`flex-1 rounded-t-[1px] ${value > 0 ? "bg-accent/70" : "bg-border"}`}
-            style={{ height: `${value > 0 ? Math.max(8, (value / max) * 100) : 4}%` }}
-          />
-        );
-      })}
+            key={month}
+            className="absolute text-[10px] leading-none text-text-muted"
+            style={{ left: `${(column / WEEKS) * 100}%` }}
+          >
+            {MONTH_INITIALS[month]}
+          </span>
+        ))}
+      </div>
+      <p className="sr-only">
+        Workouts each week: {(weekly ?? []).map((w) => `week ${w.week}, ${w.workouts ?? 0}`).join("; ")}.
+      </p>
     </div>
   );
 }
@@ -98,15 +167,18 @@ function WorkoutsTile({ data }) {
   return (
     <Tile className="flex flex-col md:order-1 md:col-span-7">
       <Label icon={Dumbbell}>Workouts</Label>
-      <p className="text-5xl font-extrabold tabular-nums leading-none text-text-primary sm:text-6xl">{fmt(t.workouts) ?? "0"}</p>
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-        <Stat value={fmt(t.active_hours, 1)} label="active hours" />
-        <Stat value={fmt(t.miles_run, 1)} label="miles run" />
-        {t.races > 0 && <Stat value={fmt(t.races)} label={plural(t.races, "race")} />}
+      {/* The stats share the big number's row, top right; on a narrow phone they drop to one
+          compact row beneath it. Either way the chart below gets the height. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <p className="text-5xl font-extrabold tabular-nums leading-none text-text-primary sm:text-6xl">{fmt(t.workouts) ?? "0"}</p>
+        <div className="flex gap-x-5 sm:gap-x-6 sm:text-right">
+          <Stat value={fmt(t.active_hours, 1)} label="active hours" />
+          <Stat value={fmt(t.miles_run, 1)} label="miles run" />
+          {t.races > 0 && <Stat value={fmt(t.races)} label={plural(t.races, "race")} />}
+        </div>
       </div>
-      {/* Phones: a fixed, short strip. Desktop: the strip takes the rest of the tile's height. */}
-      <WeekStrip weekly={data.weekly} className="mt-5 h-12 md:h-auto md:min-h-10 md:flex-1" />
-      <p className="mt-2 text-[11px] text-text-muted">Each bar is one week.</p>
+      {/* Phones: a fixed height, twice the old strip. Desktop: the chart takes the rest of the tile. */}
+      <WeekChart weekly={data.weekly} year={data.year} className="mt-5 h-28 md:h-auto md:min-h-24 md:flex-1" />
     </Tile>
   );
 }

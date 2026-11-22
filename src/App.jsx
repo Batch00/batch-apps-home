@@ -162,7 +162,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans">
+    // pb-24 on phones: room below the footer, so the end of the page scrolls clear of the
+    // floating Request Access and back-to-top buttons.
+    <div className="min-h-screen bg-[#0a0a0a] pb-24 font-sans text-[#f5f5f5] sm:pb-0">
       {showPasswordSetup && (
         <OverlayErrorBoundary>
           <SetupOverlay />

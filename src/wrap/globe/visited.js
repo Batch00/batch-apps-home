@@ -6,7 +6,8 @@
 //   ISO country codes (CA is California and Canada, MN Minnesota and Mongolia, LA Louisiana and
 //   Laos, GA Georgia and Gabon), so a state is never looked up as a country, or the other way.
 // - Only a country's home territory lights up. Parts of a country far from its main landmass
-//   (French Guiana for France) stay unlit: they are not where the trips went.
+//   (French Guiana for France), and a few named territories (Svalbard for Norway), stay unlit:
+//   they are not where the trips went.
 
 import { geoArea, geoCentroid, geoDistance } from "d3-geo";
 import { feature } from "topojson-client";
@@ -14,16 +15,25 @@ import { stateKey } from "../../lib/regions.js";
 import { COUNTRY_ID, COUNTRY_NAME_FALLBACK, STATE_FIPS } from "./codes.js";
 
 const EARTH_KM = 6371;
-// Measured from the main landmass's nearest edge: Corsica, Svalbard, Alaska and Kaliningrad stay
+// Measured from the main landmass's nearest edge: Corsica, Crete, Alaska and Kaliningrad stay
 // home; French Guiana (about 7,000 km out) does not.
 export const OVERSEAS_KM = 2500;
+
+// Territories that belong to a country but are not its home ground, by the country's ISO code and
+// a test on the part's center [lon, lat]. Distance alone cannot catch these: Svalbard sits closer
+// to mainland Norway than Canada's Arctic islands or Borneo do to theirs.
+export const NOT_HOME = {
+  NO: ([, lat]) => lat > 74, // Svalbard
+};
 
 // The key a US state uses wherever it shares a namespace with countries (the dot map grid).
 export { stateKey };
 
 // Splits a (Multi)Polygon into home and overseas polygon lists, by distance from the largest part's
-// outline (not its center, which would cut off the edges of very large countries).
-export function homeParts(geometry) {
+// outline (not its center, which would cut off the edges of very large countries), plus the
+// country's NOT_HOME rule when `code` has one.
+export function homeParts(geometry, code) {
+  const notHome = NOT_HOME[code];
   if (!geometry) return { home: [], overseas: [] };
   if (geometry.type === "Polygon") return { home: [geometry.coordinates], overseas: [] };
   if (geometry.type !== "MultiPolygon") return { home: [], overseas: [] };
@@ -40,7 +50,8 @@ export function homeParts(geometry) {
     const center = geoCentroid({ type: "Polygon", coordinates: part.coordinates });
     let nearest = Infinity;
     for (const point of outline) nearest = Math.min(nearest, geoDistance(center, point));
-    (nearest * EARTH_KM > OVERSEAS_KM ? overseas : home).push(part.coordinates);
+    const away = nearest * EARTH_KM > OVERSEAS_KM || (notHome && notHome(center));
+    (away ? overseas : home).push(part.coordinates);
   }
   return { home, overseas };
 }
@@ -54,7 +65,7 @@ export function visitedRegions(travel, world, usStates) {
       ? [...COUNTRY_ID].find(([, id]) => id === f.id)?.[0]
       : [...COUNTRY_NAME_FALLBACK].find(([, name]) => name === f.properties?.name)?.[0];
     if (!code || !wanted.has(code)) return [];
-    const { home } = homeParts(f.geometry);
+    const { home } = homeParts(f.geometry, code);
     return [{ type: "Feature", properties: { code }, geometry: { type: "MultiPolygon", coordinates: home } }];
   });
 

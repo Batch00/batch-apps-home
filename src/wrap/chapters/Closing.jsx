@@ -1,14 +1,18 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Chapter, Frame } from "../components/Chapter";
 import { Reveal } from "../components/motion";
-import { currentYear, formatAsOf } from "../../lib/ytd";
+import { FIRST_WRAP_YEAR, currentYear, formatAsOf } from "../../lib/ytd";
 
 export default function Closing({ data, meta, state }) {
   const asOf = formatAsOf(data.as_of);
   const usesTmdb = (data.media?.top_titles ?? []).length > 0;
   // A finished year points on to the next one, once that year has a wrap of its own.
-  const nextYear = data.year + 1;
-  const hasNext = state.isFinal && nextYear <= currentYear();
+  // Every other year that has a wrap, newest first: the open year reads "so far".
+  const now = currentYear();
+  const otherYears = [];
+  for (let year = now; year >= FIRST_WRAP_YEAR; year--) {
+    if (year !== data.year) otherYears.push({ year, label: `${year} ${year === now ? "so far" : "in review"}` });
+  }
 
   return (
     <Chapter {...meta}>
@@ -46,16 +50,17 @@ export default function Closing({ data, meta, state }) {
               . This product uses the TMDB API but is not endorsed or certified by TMDB.
             </p>
           )}
-          <div className="mt-12 flex flex-wrap gap-3">
-            {hasNext && (
+          <nav aria-label="Other years" className="mt-12 flex flex-wrap gap-3">
+            {otherYears.map(({ year, label }) => (
               <a
-                href={`/${nextYear}`}
+                key={year}
+                href={`/${year}`}
                 className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-caption font-semibold text-white transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
               >
-                {nextYear === currentYear() ? `${nextYear} so far` : `${nextYear} in review`}
+                {label}
                 <ArrowRight size={16} aria-hidden="true" />
               </a>
-            )}
+            ))}
             <a
               href="/"
               className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-caption font-medium text-text-primary transition-colors hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
@@ -63,7 +68,7 @@ export default function Closing({ data, meta, state }) {
               <ArrowLeft size={16} aria-hidden="true" />
               Back to Batch Apps
             </a>
-          </div>
+          </nav>
         </Reveal>
       </Frame>
     </Chapter>

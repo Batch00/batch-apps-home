@@ -5,7 +5,8 @@
 // land is tagged with a region key:
 //   "FR"      a country's home territory (ISO alpha-2)
 //   "US-CA"   a US state, never a bare USPS code: CA would collide with Canada, MN with Mongolia
-//   "~FR"     a country's far-off overseas part (French Guiana), drawn as land but never lit
+//   "~FR"     a country's far-off overseas part (French Guiana, Svalbard for Norway), drawn as land
+//             but never lit
 // Regions too small to own a cell center get a pin: one dot at a point inside the region.
 // The rules come from src/wrap/globe/visited.js, the same module the globe uses.
 //
@@ -42,7 +43,7 @@ function withBounds(features, codeOf) {
 const countryFeatures = feature(world, world.objects.countries).features.flatMap((f) => {
   const code = f.id ? alpha2ByNumeric.get(f.id) : alpha2ByName.get(f.properties?.name);
   if (!code || code === "AQ") return [];
-  const { home, overseas } = homeParts(f.geometry);
+  const { home, overseas } = homeParts(f.geometry, code);
   const out = [{ ...f, properties: { key: code }, geometry: { type: "MultiPolygon", coordinates: home } }];
   if (overseas.length) out.push({ ...f, properties: { key: `~${code}` }, geometry: { type: "MultiPolygon", coordinates: overseas } });
   return out;

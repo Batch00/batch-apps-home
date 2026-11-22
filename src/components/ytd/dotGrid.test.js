@@ -76,6 +76,11 @@ describe("dot map regressions", () => {
     expect(centers.some(([lon, lat]) => lon < -30 && lat < 20)).toBe(false);
   });
 
+  it("leaves Svalbard out of Norway", () => {
+    expect(centers.some(([lon, lat]) => lon > 0 && lon < 40 && lat > 74)).toBe(false);
+    expect(keys.lifetime.has("NO")).toBe(true);
+  });
+
   it("lights only Europe and the US for the 2026 lists", () => {
     for (const [lon, lat] of centers) {
       const europe = lon > -25 && lon < 45 && lat > 34 && lat < 81;

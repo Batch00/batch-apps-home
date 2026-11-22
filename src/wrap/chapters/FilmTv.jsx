@@ -109,20 +109,23 @@ export default function FilmTv({ data, meta }) {
           {/* Beat 3: spotlight. One poster, large, beside its title. */}
           {top && (
             <Reveal at={0.7}>
+              {/* The label sits above the pair, so it never wraps in the narrow column beside the poster. */}
+              <p className="mb-5 text-eyebrow uppercase text-text-muted sm:mb-6">Top rated this year</p>
               <div className="grid max-w-3xl grid-cols-[minmax(0,9rem)_1fr] items-end gap-5 sm:grid-cols-[minmax(0,15rem)_1fr] sm:gap-10">
                 <Reveal at={0.7} delay={100} y={24}>
                   <Poster title={top.title} path={top.poster_path} year={top.release_year} />
                 </Reveal>
                 <div>
-                  <p className="text-eyebrow uppercase text-text-muted">Top rated this year</p>
-                  <p className="mt-4 text-headline text-text-primary">{top.title}</p>
-                  <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption uppercase tracking-widest text-secondary">
-                    <span>{top.media_type === "tv" ? "TV" : "Film"}</span>
-                    <span aria-hidden="true" className="h-px w-4 bg-border" />
-                    <span>{top.release_year}</span>
-                    <span aria-hidden="true" className="h-px w-4 bg-border" />
-                    <span className="text-accent">{formatNumber(top.rating, 1)} stars</span>
+                  <p className="text-headline text-text-primary">{top.title}</p>
+                  <p className="mt-4 text-caption uppercase tracking-widest text-secondary">
+                    {[top.media_type === "tv" ? "TV" : "Film", top.release_year].filter(Boolean).join(" · ")}
                   </p>
+                  {typeof top.rating === "number" && (
+                    <p className="mt-2 flex items-center gap-1.5 text-caption uppercase tracking-widest text-accent">
+                      <Star size={13} className="fill-accent" aria-hidden="true" />
+                      {formatNumber(top.rating, 1)} stars
+                    </p>
+                  )}
                 </div>
               </div>
               {oldest && <p className="mt-8 max-w-2xl text-lede text-secondary">{oldest}</p>}
