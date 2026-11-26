@@ -187,7 +187,11 @@
             "value": 48000
           }
         ]
-      }
+      },
+      "fixed_bill_categories": [
+        "Insurance",
+        "Taxes"
+      ]
     },
     "travel_private": {
       "trips": [

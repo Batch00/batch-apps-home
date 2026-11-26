@@ -318,10 +318,11 @@ function timelineTotals(d) {
   return timelineWithoutEpisodes(d).map((m) => ({ month: m.month, total: num(m.batchburn) + num(m.batchflix) + num(m.batchport) }));
 }
 
-// Bills paid in one go (BatchBrain's fixed_bill_categories) reach 100% of plan early in the
-// month, so they never lead the "where it went" line. The payload's own flag or list wins when
-// present; otherwise these are the defaults.
-export const DEFAULT_FIXED_BILLS = ["Taxes", "Insurance", "Student Loans"];
+// Bills paid in one go reach 100% of plan early in the month, so they never lead the "where it
+// went" line. BatchBrain sends its list as money.fixed_bill_categories (migration 0019, from
+// brain.config); a per-category is_fixed_bill flag wins over it, and this default only applies
+// when neither is sent. Student Loans is not fixed: its amount varies by month.
+export const DEFAULT_FIXED_BILLS = ["Insurance", "Taxes"];
 
 export function isFixedBill(d, category) {
   if (typeof category?.is_fixed_bill === "boolean") return category.is_fixed_bill;
@@ -329,6 +330,22 @@ export function isFixedBill(d, category) {
   const names = Array.isArray(list) ? list : DEFAULT_FIXED_BILLS;
   const name = String(category?.category ?? "").toLowerCase();
   return names.some((n) => String(n).toLowerCase() === name);
+}
+
+// When the year's first net worth snapshot came after January 1 (BatchFolio began mid-year),
+// BatchBrain's net_worth.start is that snapshot. Returns "April 9" from net_worth.start_date when
+// it is sent, else "April" from the first month with a value, or null when tracking covers the
+// whole year.
+export function netWorthSince(d) {
+  const nw = priv(d)?.money?.net_worth ?? {};
+  const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(nw.start_date ?? "");
+  if (date) {
+    const [year, month, day] = [Number(date[1]), Number(date[2]), Number(date[3])];
+    if (year !== d.year || (month === 1 && day === 1)) return null;
+    return `${monthName(month)} ${day}`;
+  }
+  const first = (nw.monthly ?? []).find((m) => m && Number.isInteger(m.month) && isNum(m.value));
+  return first && first.month > 1 ? monthName(first.month) : null;
 }
 
 function topFlexibleCategory(d) {
@@ -426,11 +443,19 @@ export const PRIVATE_RULES = [
     line: (d) => {
       const { start, latest } = priv(d).money.net_worth;
       const change = latest - start;
-      const pct = start > 0 ? `, ${Math.round(Math.abs(change / start) * 100)}% ${change > 0 ? "higher" : "lower"}` : "";
+      const since = netWorthSince(d);
+      const share = start > 0 ? `${Math.round(Math.abs(change / start) * 100)}% ${change > 0 ? "higher" : "lower"}` : "";
       const verb = change > 0 ? "up" : "down";
+      const amount = formatMoney(Math.abs(change));
+      // Tracking began after January 1: the change runs from the first snapshot, so say so.
+      if (since) {
+        const tail = `since ${since}, when tracking started${share ? `: ${share}` : ""}.`;
+        return d.is_partial === false ? `Net worth ended the year ${verb} ${amount} ${tail}` : `Net worth is ${verb} ${amount} ${tail}`;
+      }
+      const pct = share ? `, ${share}` : "";
       return d.is_partial === false
-        ? `Net worth ended the year ${verb} ${formatMoney(Math.abs(change))}${pct}.`
-        : `Net worth is ${verb} ${formatMoney(Math.abs(change))} so far this year${pct}.`;
+        ? `Net worth ended the year ${verb} ${amount}${pct}.`
+        : `Net worth is ${verb} ${amount} so far this year${pct}.`;
     },
   },
   {

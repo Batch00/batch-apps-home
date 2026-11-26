@@ -92,7 +92,10 @@ function money(raw) {
       }),
     },
   };
-  // Optional: the fixed-bill category names, when BatchBrain sends them. Names only.
+  // Optional: the date of the year's first net worth snapshot, when BatchBrain sends it.
+  const startDate = date(netWorth.start_date);
+  if (startDate) out.net_worth.start_date = startDate;
+  // The fixed-bill category names (BatchBrain 0019, from brain.config). Names only.
   if (Array.isArray(m.fixed_bill_categories)) {
     out.fixed_bill_categories = m.fixed_bill_categories
       .map((name) => text(name, 80))

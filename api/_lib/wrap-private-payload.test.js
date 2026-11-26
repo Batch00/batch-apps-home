@@ -54,8 +54,22 @@ describe("toPrivateBlock", () => {
     expect(out.money.fixed_bill_categories).toEqual(["Taxes", "Insurance"]);
     expect(out.money.top_categories[0].is_fixed_bill).toBe(true);
     expect("is_fixed_bill" in out.money.top_categories[1]).toBe(false);
-    // Absent upstream, absent here: the sample has neither.
-    expect("fixed_bill_categories" in toPrivateBlock(sample.private).money).toBe(false);
+    // The sample mirrors 0019, which sends the list.
+    expect(toPrivateBlock(sample.private).money.fixed_bill_categories).toEqual(["Insurance", "Taxes"]);
+    // Absent upstream, absent here.
+    const without = clone();
+    delete without.money.fixed_bill_categories;
+    expect("fixed_bill_categories" in toPrivateBlock(without).money).toBe(false);
+  });
+
+  it("keeps net_worth.start_date only as a valid YYYY-MM-DD", () => {
+    const raw = clone();
+    raw.money.net_worth.start_date = "2026-04-09";
+    expect(toPrivateBlock(raw).money.net_worth.start_date).toBe("2026-04-09");
+    for (const bad of ["2026-04-31", "April 9", "2026-04-09T00:00:00Z", 20260409]) {
+      raw.money.net_worth.start_date = bad;
+      expect("start_date" in toPrivateBlock(raw).money.net_worth).toBe(false);
+    }
   });
 
   it("returns null without a version 1 block", () => {

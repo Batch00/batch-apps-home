@@ -2,7 +2,16 @@ import { describe, expect, it } from "vitest";
 import fixture from "./fixtures/2026.json";
 import fixture2025 from "./fixtures/2025.json";
 import sample from "./fixtures/private/sample.json";
-import { PRIVATE_RULES, insight, insights, isChapterEligible, isFixedBill, timelineWithoutEpisodes } from "./insights.js";
+import {
+  DEFAULT_FIXED_BILLS,
+  PRIVATE_RULES,
+  insight,
+  insights,
+  isChapterEligible,
+  isFixedBill,
+  netWorthSince,
+  timelineWithoutEpisodes,
+} from "./insights.js";
 
 // The private view's lines, pinned against the synthetic sample (fake numbers) on the public
 // 2026 fixture, the way the page puts them together for the signed-in owner.
@@ -183,13 +192,35 @@ describe("trip and training rule edges", () => {
 });
 
 describe("fixed bills in \"where it went\"", () => {
-  it("skips the default fixed bills (Taxes, Insurance, Student Loans) when none are sent", () => {
+  it("uses the list BatchBrain sends (0019: Insurance and Taxes)", () => {
     const d = withPrivate();
+    expect(d.private.money.fixed_bill_categories).toEqual(["Insurance", "Taxes"]);
     expect(d.private.money.top_categories[0].category).toBe("Insurance");
     expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.");
   });
 
+  it("falls back to Insurance and Taxes when no list is sent, and never treats Student Loans as fixed", () => {
+    const d = withPrivate();
+    delete d.private.money.fixed_bill_categories;
+    expect(DEFAULT_FIXED_BILLS).toEqual(["Insurance", "Taxes"]);
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.");
+    d.private.money.top_categories[0].category = "Student Loans";
+    expect(isFixedBill(d, d.private.money.top_categories[0])).toBe(false);
+    expect(insight(d, "top-category")).toBe("Student Loans led spending at $11,000, 100% of its plan.");
+    d.private.money.top_categories[0].category = "Taxes";
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.");
+  });
+
   it("drops the prefix when no listed category is a fixed bill", () => {
+    const d = withPrivate();
+    d.private.money.top_categories[0].category = "Rent";
+    expect(insight(d, "top-category")).toBe("Rent led spending at $11,000, 100% of its plan.");
+    d.private.money.fixed_bill_categories = [];
+    d.private.money.top_categories[0].category = "Insurance";
+    expect(insight(d, "top-category")).toBe("Insurance led spending at $11,000, 100% of its plan.");
+  });
+
+  it("matches the sent list without regard to case", () => {
     const d = withPrivate();
     d.private.money.top_categories[0].category = "Rent";
     expect(insight(d, "top-category")).toBe("Rent led spending at $11,000, 100% of its plan.");
@@ -238,5 +269,46 @@ describe("timeline without episodes", () => {
     expect(rows.find((m) => m.month === 1)).toEqual({ month: 1, batchburn: 20, batchflix: 9, batchport: 0 });
     expect(rows.find((m) => m.month === 2).batchflix).toBeNull();
     expect(rows.find((m) => m.month === 9)).toEqual({ month: 9, batchburn: 10, batchflix: 11, batchport: 30 });
+  });
+});
+
+describe("net worth when tracking started after January 1", () => {
+  // BatchFolio's first 2026 snapshot is April 9: no value before April, and start is that snapshot.
+  const fromApril = (base = fixture, extra = {}) => {
+    const d = withPrivate(base);
+    const nw = d.private.money.net_worth;
+    nw.monthly = nw.monthly.map((m) => (m.month < 4 ? { ...m, value: null } : m));
+    Object.assign(nw, { start: 42000, latest: 48000, change: 6000 }, extra);
+    return d;
+  };
+
+  it("names the day from net_worth.start_date", () => {
+    const d = fromApril(fixture, { start_date: "2026-04-09" });
+    expect(netWorthSince(d)).toBe("April 9");
+    expect(insight(d, "net-worth")).toBe("Net worth is up $6,000 since April 9, when tracking started: 14% higher.");
+    const final = fromApril(fixture2025, { start_date: "2025-04-09" });
+    expect(insight(final, "net-worth")).toBe("Net worth ended the year up $6,000 since April 9, when tracking started: 14% higher.");
+  });
+
+  it("names the first month with a value when no start date is sent", () => {
+    const d = fromApril();
+    expect(netWorthSince(d)).toBe("April");
+    expect(insight(d, "net-worth")).toBe("Net worth is up $6,000 since April, when tracking started: 14% higher.");
+  });
+
+  it("says this year when tracking covers January 1", () => {
+    const d = withPrivate();
+    expect(netWorthSince(d)).toBeNull();
+    expect(insight(d, "net-worth")).toBe("Net worth is up $9,000 so far this year, 23% higher.");
+    d.private.money.net_worth.start_date = "2026-01-01";
+    expect(netWorthSince(d)).toBeNull();
+    // A start date in an earlier year means tracking began before this one.
+    d.private.money.net_worth.start_date = "2025-06-01";
+    expect(netWorthSince(d)).toBeNull();
+  });
+
+  it("words a fall since tracking started", () => {
+    const d = fromApril(fixture, { start_date: "2026-04-09", latest: 40000, change: -2000 });
+    expect(insight(d, "net-worth")).toBe("Net worth is down $2,000 since April 9, when tracking started: 5% lower.");
   });
 });
