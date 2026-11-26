@@ -57,7 +57,9 @@ export class SignInError extends Error {
   }
 }
 
-// Signs in with email and password and resolves the access token.
+// Signs in with email and password and resolves the new session's access token, read straight
+// from signInWithPassword's result (no second read of storage). supabase-js keeps the session in
+// localStorage, so it is still there after a reload.
 export async function signIn(email, password) {
   const supabase = await loadClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -101,16 +103,27 @@ export function loadDevSample() {
   return devSample();
 }
 
+// Every response from api/wrap-private.js carries this header. A 401 or 403 without it came from
+// something in front of the function (Vercel's preview protection, a proxy), not from the owner
+// check, so it says nothing about the session and must never sign anyone out.
+export const API_MARKER = "x-wrap-private";
+
 // Fetches the private block for the year with the token in the Authorization header (never in
-// the URL). Resolves { status: "owner", block }, { status: "forbidden" } (signed in, not the
-// owner) or { status: "unauthorized" } (token refused). Throws on any other failure.
+// the URL). Resolves { status: "owner", block }, { status: "forbidden" } (the API says this
+// account is not the owner) or { status: "unauthorized" } (the API refused the token). Throws on
+// anything else, including a redirect.
+//
+// credentials "same-origin" sends this site's own cookies, which Vercel's deployment protection
+// needs on preview URLs; the API itself only reads the Authorization header. redirect "error"
+// stops a protection or login redirect from being followed and mistaken for an answer.
 export async function fetchPrivateWrap(year, token, signal) {
   let res;
   try {
     res = await fetch(`/api/wrap-private?year=${year}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       cache: "no-store",
-      credentials: "omit",
+      credentials: "same-origin",
+      redirect: "error",
       referrerPolicy: "no-referrer",
       signal,
     });
@@ -121,10 +134,11 @@ export async function fetchPrivateWrap(year, token, signal) {
     }
     throw err;
   }
-  if (res.status === 401) return { status: "unauthorized" };
-  if (res.status === 403) return { status: "forbidden" };
+  const fromApi = res.headers.get(API_MARKER) === "1";
+  if (fromApi && res.status === 401) return { status: "unauthorized" };
+  if (fromApi && res.status === 403) return { status: "forbidden" };
   if (!res.ok) {
-    const sample = res.status === 404 ? await devSample() : null;
+    const sample = res.status === 404 && !fromApi ? await devSample() : null;
     if (sample) return { status: "owner", block: sample };
     throw new Error(`Private wrap request failed with ${res.status}`);
   }
@@ -138,4 +152,47 @@ export async function fetchPrivateWrap(year, token, signal) {
   }
   if (json?.year !== year || !json.private || json.private.version !== 1) throw new Error("Private wrap payload is not usable");
   return { status: "owner", block: json.private };
+}
+
+async function askApi(year, token, signal) {
+  try {
+    return await fetchPrivateWrap(year, token, signal);
+  } catch {
+    return { status: "unavailable" };
+  }
+}
+
+// Sign-in from the dialog. Resolves:
+//   { status: "owner", block }   signed in and shown the private view
+//   { status: "forbidden" }      the API says this is not the owner: signed out again
+//   { status: "unavailable" }    signed in, but the private view could not load; the session is
+//                                kept, so a retry or a reload can load it
+// Rejects with SignInError when the password sign-in itself fails. Only a confirmed 403 from the
+// API signs out; nothing here logs the session or the token.
+export async function signInAndLoad(year, email, password, signal) {
+  const token = await signIn(email, password);
+  const result = await askApi(year, token, signal);
+  if (result.status === "owner") return result;
+  if (result.status === "forbidden") {
+    await signOut();
+    return { status: "forbidden" };
+  }
+  // A 401 for a token Supabase issued a moment ago means the server could not confirm it (a
+  // configuration problem), not that the owner should sign in again.
+  return { status: "unavailable" };
+}
+
+// A session stored on this device, checked on load (after a reload, say). Resolves "owner" with
+// the block, "idle" when there is no session or the API says it is not the owner's (cleared),
+// or "unavailable" (session kept) when the private view could not load.
+export async function loadStoredSession(year, signal) {
+  const token = await currentToken();
+  if (!token) return { status: "idle" };
+  const result = await askApi(year, token, signal);
+  if (result.status === "owner") return result;
+  if (result.status === "forbidden") {
+    await signOut();
+    return { status: "idle" };
+  }
+  return { status: "unavailable" };
 }

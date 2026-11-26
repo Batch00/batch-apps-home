@@ -118,12 +118,14 @@ describe("GET /api/wrap-private", () => {
     expect((await call(handler, { headers: { authorization: `bearer ${OWNER_TOKEN}` } })).statusCode).toBe(200);
   });
 
-  it("marks every response private and no-store", async () => {
+  it("marks every response private, no-store and as the API's own", async () => {
     const { handler } = setup();
     for (const token of [undefined, BAD_TOKEN, OTHER_TOKEN, OWNER_TOKEN]) {
       const res = await call(handler, { token });
       expect(res.headers["cache-control"]).toBe("private, no-store, max-age=0");
       expect(res.headers.vary).toBe("Authorization");
+      // The page trusts a 401 or 403 only with this marker (src/wrap/owner/session.js).
+      expect(res.headers["x-wrap-private"]).toBe("1");
     }
   });
 

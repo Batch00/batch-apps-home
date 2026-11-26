@@ -3,13 +3,12 @@ import { captureScrollAnchor } from "../engine/scrollAnchor";
 import { OwnerContext } from "./ownerContext";
 import {
   SignInError,
-  currentToken,
   devSampleRequested,
-  fetchPrivateWrap,
   hasStoredSession,
   loadDevSample,
+  loadStoredSession,
   readViewPref,
-  signIn as signInWithPassword,
+  signInAndLoad,
   signOut as clearSession,
   writeViewPref,
 } from "./session";
@@ -24,17 +23,15 @@ const MESSAGES = {
   rate: "Too many attempts. Wait a minute, then try again.",
   network: "Sign-in could not reach the server. Try again in a moment.",
   forbidden: "That account is not the owner of this page, so it has been signed out. This page stays public.",
-  unauthorized: "That sign-in did not hold. Try again.",
   unavailable: "Signed in, but the private view could not load. Try again in a moment.",
 };
 
-async function loadBlock(year) {
+// Runs one of the session flows with a timeout on the private request.
+async function withTimeout(run) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const token = await currentToken();
-    if (!token) return { status: "unauthorized" };
-    return await fetchPrivateWrap(year, token, controller.signal);
+    return await run(controller.signal);
   } finally {
     clearTimeout(timer);
   }
@@ -69,19 +66,16 @@ export function OwnerProvider({ year, children }) {
       if (alive.current) update(block ? { status: "owner", block } : { status: "idle", block: null });
       return;
     }
+    let result;
     try {
-      const result = await loadBlock(year);
-      if (!alive.current) return;
-      if (result.status === "owner") update({ status: "owner", block: result.block });
-      else {
-        // A stored session that is not the owner's, or one Supabase no longer accepts, is
-        // cleared quietly: this page has no other use for it.
-        await clearSession();
-        if (alive.current) update({ status: "idle", block: null });
-      }
+      result = await withTimeout((signal) => loadStoredSession(year, signal));
     } catch {
-      if (alive.current) update({ status: "unavailable", block: null });
+      result = { status: "unavailable" };
     }
+    if (!alive.current) return;
+    // "idle": no session, or the API said it is not the owner's (session.js cleared it).
+    // "unavailable": the session is kept, and the top bar offers a retry.
+    update(result.status === "owner" ? { status: "owner", block: result.block } : { status: result.status, block: null });
   }, [year, update]);
 
   useEffect(() => {
@@ -98,33 +92,23 @@ export function OwnerProvider({ year, children }) {
 
   const signIn = useCallback(
     async (email, password) => {
+      let result;
       try {
-        const token = await signInWithPassword(email, password);
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-        let result;
-        try {
-          result = await fetchPrivateWrap(year, token, controller.signal);
-        } catch {
-          // Signed in, but nothing to show yet: keep the session so a retry can load it.
-          update({ status: "unavailable", block: null });
-          return { ok: false, message: MESSAGES.unavailable };
-        } finally {
-          clearTimeout(timer);
-        }
-        if (result.status !== "owner") {
-          await clearSession();
-          update({ status: "idle", block: null });
-          return { ok: false, message: MESSAGES[result.status] };
-        }
+        // The token from signInWithPassword goes straight to the API (session.js).
+        result = await withTimeout((signal) => signInAndLoad(year, email, password, signal));
+      } catch (err) {
+        return { ok: false, message: MESSAGES[err instanceof SignInError ? err.kind : "network"] };
+      }
+      if (result.status === "owner") {
         writeViewPref("private");
         setViewState("private");
         update({ status: "owner", block: result.block });
         setDialogOpen(false);
         return { ok: true };
-      } catch (err) {
-        return { ok: false, message: MESSAGES[err instanceof SignInError ? err.kind : "network"] };
       }
+      // forbidden: signed out again. unavailable: still signed in, so the top bar shows a retry.
+      update({ status: result.status === "forbidden" ? "idle" : "unavailable", block: null });
+      return { ok: false, message: MESSAGES[result.status] };
     },
     [year, update],
   );

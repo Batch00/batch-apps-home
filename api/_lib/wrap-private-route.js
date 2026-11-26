@@ -24,6 +24,9 @@ export function createWrapPrivateHandler({ getUser, readPayload, ownerId }) {
     res.setHeader("Cache-Control", NO_STORE);
     res.setHeader("Vary", "Authorization");
     res.setHeader("X-Content-Type-Options", "nosniff");
+    // Marks the answer as this function's: the page acts on a 401 or 403 only when it is set, so
+    // a 401 from Vercel's preview protection or a proxy never signs the owner out.
+    res.setHeader("X-Wrap-Private", "1");
 
     if (req.method !== "GET") {
       res.setHeader("Allow", "GET");
