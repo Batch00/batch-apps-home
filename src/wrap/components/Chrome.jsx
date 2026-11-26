@@ -29,7 +29,7 @@ function useActiveChapter(ids) {
 }
 
 // Thin page progress line, home link, year state and the current chapter (phones), plus the
-// owner controls: a discreet sign-in, or once the owner is signed in, the view badge and toggle.
+// owner controls: a discreet sign-in, or once the owner is signed in, the view switch.
 export function TopBar({ label, chapters }) {
   const barRef = useRef(null);
   const owner = useOwner();

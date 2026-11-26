@@ -38,6 +38,20 @@
     transform: translateY(0);
   }
 
+  /* Home hero height. It sits under main's pt-16 (the 64px top bar), so on phones it is the
+     visible viewport minus that bar. 100vh on phones is the viewport with the toolbars hidden,
+     which pushed the hero past the fold; svh is what is visible on load. Desktop keeps 100vh. */
+  .hero-stage {
+    min-height: calc(100vh - 4rem);
+    min-height: calc(100svh - 4rem);
+  }
+
+  @media (min-width: 768px) {
+    .hero-stage {
+      min-height: 100vh;
+    }
+  }
+
   .dot-grid {
     background-image: radial-gradient(circle, #1f1f1f 1px, transparent 1px);
     background-size: 32px 32px;

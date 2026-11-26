@@ -54,10 +54,14 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 
 ## Private view (owner only, /<year>)
 - A discreet "Owner sign in" (lock in the top bar, a link in the closing chapter) opens an email and password dialog. A non-owner account is told so and signed out. A stored session is checked on load; the page waits up to 4 s for it so the owner's story does not rebuild under them.
-- Signed in as the owner: a "Private view" badge, a one-tap "Public view" toggle (remembered per device in localStorage, `batchwrap:view`) and sign out. The private block stays in memory only.
+- Signed in as the owner: a segmented [Private | Public] switch (lock and eye; remembered per device in localStorage, `batchwrap:view`) and a separate sign out. The private block stays in memory only.
 - Private chapters (`private: true` in `chapters/index.js`, gated in `CHAPTER_GATES` on `data.private`): Trips (names, dates, trip spend, spend per day, trip spend as a share of budget spend, never added to it), Training (strength by routine, stretching), Money (spend vs plan by month, top categories with percent of plan, savings rate, net worth trend) and Timeline (events by month and app). Their lines are `PRIVATE_RULES` in `insights.js`, tested in `insights.private.test.js` on the sample.
 - The public view must stay exactly the public story: `src/wrap/privacy.test.js` pins the public chapter list, the fixtures, the share pages and home code, and `npm run check:privacy` builds and scans `dist/` (no sample, no private names in the home bundle or share pages).
 - Development: `?private=sample` shows the private view on the synthetic sample without signing in (dev builds only).
+
+## PWA
+- Installable: `public/manifest.webmanifest` (start_url `/`, standalone, #0a0a0a, a "2026 so far" shortcut to `/2026`: update its year each January), icons in `public/icons/` built from the favicon mark by `python scripts/build-icons.py`, iOS tags in both `index.html` and `wrap.html`.
+- `public/sw.js` is registered from `main.jsx` in production only. It never touches `/api/*` (network only, so `/api/wrap-private` is never cached), loads pages network first (cache only when offline) and caches hashed `/assets/*`. Bump its `VERSION` to drop every cache.
 
 ## Deployment
 - Push to `main` triggers auto-deploy on Vercel

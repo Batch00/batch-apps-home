@@ -34,7 +34,25 @@ function SignOutButton() {
   );
 }
 
-// Top bar, signed in as the owner: the view badge, the one-tap toggle, and sign out.
+// One side of the view switch. The active side is filled; the other is a quiet tap target.
+function ViewOption({ active, onClick, icon: Icon, children }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 px-3 py-1.5 text-caption font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        active ? "bg-accent text-white" : "bg-transparent text-text-muted hover:text-text-primary"
+      }`}
+    >
+      <Icon size={13} aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
+// Top bar, signed in as the owner: a segmented [Private | Public] switch, then sign out.
+// The choice is remembered on this device (OwnerProvider, localStorage batchwrap:view).
 export function OwnerControls() {
   const owner = useOwner();
 
@@ -56,24 +74,17 @@ export function OwnerControls() {
   const isPrivate = owner.showPrivate;
   return (
     <div className="flex items-center gap-1.5 sm:gap-2">
-      <p role="status" className="contents">
-        {isPrivate ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-caption font-semibold text-white">
-            <Lock size={13} aria-hidden="true" />
-            Private view
-          </span>
-        ) : (
-          <span className="sr-only">Public view</span>
-        )}
+      <p role="status" className="sr-only">
+        {isPrivate ? "Private view" : "Public view"}
       </p>
-      <button
-        type="button"
-        onClick={() => owner.setView(isPrivate ? "public" : "private")}
-        className={`${QUIET_BUTTON} border border-border px-3 py-1.5 text-text-primary hover:border-accent hover:text-accent`}
-      >
-        {isPrivate ? <Eye size={13} aria-hidden="true" /> : <Lock size={13} aria-hidden="true" />}
-        {isPrivate ? "Public view" : "Private view"}
-      </button>
+      <div role="group" aria-label="View" className="inline-flex items-center gap-0.5 rounded-full border border-border bg-surface p-0.5">
+        <ViewOption active={isPrivate} onClick={() => !isPrivate && owner.setView("private")} icon={Lock}>
+          Private
+        </ViewOption>
+        <ViewOption active={!isPrivate} onClick={() => isPrivate && owner.setView("public")} icon={Eye}>
+          Public
+        </ViewOption>
+      </div>
       <SignOutButton />
     </div>
   );

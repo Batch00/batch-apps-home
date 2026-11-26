@@ -13,3 +13,11 @@ createRoot(document.getElementById('root')).render(
     {wrapYear ? <WrapRoute year={wrapYear} /> : <App />}
   </StrictMode>,
 )
+
+// Installable as an app (public/manifest.webmanifest). The worker never caches /api/* and loads
+// pages network first, see public/sw.js. Production only, so dev servers never get one.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}

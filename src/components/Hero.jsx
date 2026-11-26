@@ -5,7 +5,9 @@ export default function Hero() {
   const ref = useFadeIn();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden dot-grid">
+    // Phones: the visible viewport minus the top bar (.hero-stage), content near the top instead
+    // of floating mid-screen. md and up: centered in a full-height screen, as before.
+    <section className="hero-stage relative flex items-start justify-center overflow-hidden dot-grid pt-12 pb-20 sm:pt-16 md:items-center md:py-0">
       {/* Radial gradient overlay to fade out the dot grid toward center */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,_#0a0a0a_60%,_transparent_100%)]" />
 
