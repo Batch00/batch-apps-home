@@ -56,7 +56,7 @@ function money(raw) {
   const m = obj(raw);
   const totals = obj(m.totals);
   const netWorth = obj(m.net_worth);
-  return {
+  const out = {
     monthly: mapList(m.monthly, (row) => {
       const key = month(row.month);
       return key === null
@@ -71,14 +71,11 @@ function money(raw) {
     }),
     top_categories: mapList(m.top_categories, (row) => {
       const category = text(row.category, 80);
-      return category === null
-        ? null
-        : {
-            category,
-            spend: amount(row.spend),
-            planned: amount(row.planned),
-            pct_of_plan: pct(row.pct_of_plan),
-          };
+      if (category === null) return null;
+      const out = { category, spend: amount(row.spend), planned: amount(row.planned), pct_of_plan: pct(row.pct_of_plan) };
+      // Optional (brain.config.fixed_bill_categories): a bill paid in one go. Kept only as a boolean.
+      if (typeof row.is_fixed_bill === "boolean") out.is_fixed_bill = row.is_fixed_bill;
+      return out;
     }).slice(0, MAX_TOP_CATEGORIES),
     totals: {
       spend: amount(totals.spend),
@@ -95,6 +92,14 @@ function money(raw) {
       }),
     },
   };
+  // Optional: the fixed-bill category names, when BatchBrain sends them. Names only.
+  if (Array.isArray(m.fixed_bill_categories)) {
+    out.fixed_bill_categories = m.fixed_bill_categories
+      .map((name) => text(name, 80))
+      .filter(Boolean)
+      .slice(0, MAX_TOP_CATEGORIES);
+  }
+  return out;
 }
 
 function travelPrivate(raw) {

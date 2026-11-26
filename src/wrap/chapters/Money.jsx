@@ -3,14 +3,15 @@ import { Grow, Reveal } from "../components/motion";
 import { PrivateTag } from "../components/PrivateTag";
 import { Eyebrow } from "../components/type";
 import { formatMoney, formatPercent, monthInitial, monthName } from "../format";
-import { insight } from "../insights";
+import { insight, isFixedBill } from "../insights";
 
 // Private chapter. Spending is budget_spend (Savings excluded) against the month's plan.
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 
 // Beat 1: one column per month, spend as the bar and the plan as a line across it.
-function SpendColumns({ monthly, lastMonth }) {
+// The month in progress (open year only) is drawn dimmer: its spend is partial, its plan is not.
+function SpendColumns({ monthly, lastMonth, openMonth }) {
   const byMonth = new Map(monthly.map((m) => [m.month, m]));
   const max = Math.max(1, ...monthly.flatMap((m) => [m.spend ?? 0, m.planned ?? 0]));
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -30,7 +31,7 @@ function SpendColumns({ monthly, lastMonth }) {
                 at={0.5}
                 on="enter"
                 delay={250 + i * 50}
-                className={`w-full rounded-t-[3px] ${over ? "bg-accent" : "bg-[#3a3a3a]"}`}
+                className={`w-full rounded-t-[3px] ${over ? "bg-accent" : "bg-[#3a3a3a]"} ${month === openMonth ? "opacity-45" : ""}`}
                 style={{ height: `${Math.max(2, (m.spend / max) * 100)}%` }}
               />
               {isNum(m.planned) && m.planned > 0 && (
@@ -63,23 +64,38 @@ function SpendColumns({ monthly, lastMonth }) {
           <span className="h-2.5 w-2.5 rounded-sm bg-accent" />
           Over plan
         </span>
+        {openMonth && (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[#3a3a3a] opacity-45" />
+            Month so far
+          </span>
+        )}
       </p>
     </div>
   );
 }
 
 // Beat 2: the top categories, each with its spend and its percent of plan.
-function CategoryRows({ categories }) {
+// Fixed bills stay in the list, marked, with a quieter bar: they hit their plan in one payment.
+function CategoryRows({ data, categories }) {
   const top = categories.filter((c) => isNum(c.spend) && c.spend > 0).slice(0, 6);
   const max = Math.max(1, ...top.map((c) => c.spend));
   return (
     <ul className="mt-8 max-w-3xl space-y-4">
       {top.map((c, i) => {
         const over = isNum(c.pct_of_plan) && Math.round(c.pct_of_plan) > 100;
+        const fixed = isFixedBill(data, c);
         return (
           <li key={c.category}>
             <div className="flex items-baseline justify-between gap-4">
-              <span className="truncate text-lede text-text-primary">{c.category}</span>
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className={`truncate text-lede ${fixed ? "text-secondary" : "text-text-primary"}`}>{c.category}</span>
+                {fixed && (
+                  <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-text-muted">
+                    Fixed
+                  </span>
+                )}
+              </span>
               <span className="shrink-0 text-caption tabular-nums text-secondary">
                 {formatMoney(c.spend)}
                 {isNum(c.pct_of_plan) && (
@@ -94,7 +110,7 @@ function CategoryRows({ categories }) {
                 at={0.34}
                 delay={200 + i * 70}
                 axis="x"
-                className={`block h-full rounded-full ${over ? "bg-accent" : "bg-[#4a4a4a]"}`}
+                className={`block h-full rounded-full ${fixed ? "bg-[#2a2a2a]" : over ? "bg-accent" : "bg-[#4a4a4a]"}`}
                 style={{ width: `${Math.max(2, (c.spend / max) * 100)}%` }}
               />
             </span>
@@ -156,7 +172,7 @@ export default function Money({ data, meta, state }) {
               {formatMoney(money.totals.spend)} <span className="text-secondary">spent.</span>
             </p>
             {spendLine && <p className="mt-5 max-w-2xl text-lede text-secondary">{spendLine}</p>}
-            <SpendColumns monthly={monthly} lastMonth={state.lastMonth} />
+            <SpendColumns monthly={monthly} lastMonth={state.lastMonth} openMonth={state.isFinal ? null : state.lastMonth} />
             {underPlan && <p className="mt-5 max-w-2xl text-caption text-secondary">{underPlan}</p>}
             <p className="sr-only">
               Spend and plan by month:{" "}
@@ -170,7 +186,7 @@ export default function Money({ data, meta, state }) {
           <Reveal at={0.34} out={0.68}>
             <p className="text-eyebrow uppercase text-text-muted">Where it went</p>
             {topCategory && <p className="mt-5 max-w-4xl text-title text-text-primary">{topCategory}</p>}
-            <CategoryRows categories={money.top_categories ?? []} />
+            <CategoryRows data={data} categories={money.top_categories ?? []} />
             {overPlan && <p className="mt-6 max-w-2xl text-lede text-secondary">{overPlan}</p>}
           </Reveal>
 

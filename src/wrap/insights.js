@@ -302,10 +302,37 @@ function soFar(d) {
 
 const APP_NAMES = { batchburn: "BatchBurn", batchflix: "BatchFlix", batchport: "BatchPort" };
 
-function timelineTotals(d) {
+// The cross-app timeline without episodes. BatchBrain's timeline counts BatchFlix's
+// life_events, which are title_watched plus episode_watched; episode logging began in June 2026
+// and was backfilled, so episodes would swamp the months they landed in. The public payload's
+// monthly titles is life_monthly.titles_watched, the same count as title_watched events, so it
+// stands in for BatchFlix here (null where the month has no BatchFlix data).
+export function timelineWithoutEpisodes(d) {
+  const titles = new Map(months(d).map((m) => [m.month, isNum(m.titles) ? m.titles : null]));
   return (priv(d)?.timeline ?? [])
     .filter((m) => m && Number.isInteger(m.month))
-    .map((m) => ({ month: m.month, total: num(m.batchburn) + num(m.batchflix) + num(m.batchport) }));
+    .map((m) => ({ ...m, batchflix: titles.has(m.month) ? titles.get(m.month) : null }));
+}
+
+function timelineTotals(d) {
+  return timelineWithoutEpisodes(d).map((m) => ({ month: m.month, total: num(m.batchburn) + num(m.batchflix) + num(m.batchport) }));
+}
+
+// Bills paid in one go (BatchBrain's fixed_bill_categories) reach 100% of plan early in the
+// month, so they never lead the "where it went" line. The payload's own flag or list wins when
+// present; otherwise these are the defaults.
+export const DEFAULT_FIXED_BILLS = ["Taxes", "Insurance", "Student Loans"];
+
+export function isFixedBill(d, category) {
+  if (typeof category?.is_fixed_bill === "boolean") return category.is_fixed_bill;
+  const list = priv(d)?.money?.fixed_bill_categories;
+  const names = Array.isArray(list) ? list : DEFAULT_FIXED_BILLS;
+  const name = String(category?.category ?? "").toLowerCase();
+  return names.some((n) => String(n).toLowerCase() === name);
+}
+
+function topFlexibleCategory(d) {
+  return (priv(d)?.money?.top_categories ?? []).find((c) => num(c.spend) > 0 && !isFixedBill(d, c)) ?? null;
 }
 
 function strengthSessions(d) {
@@ -322,12 +349,16 @@ export const PRIVATE_RULES = [
   {
     id: "spend-vs-plan",
     chapter: "money",
-    eligible: (d) => num(priv(d)?.money?.totals?.spend) > 0 && plannedMonths(d).length > 0,
+    // Completed months only: the month in progress has its full plan but only part of its spend,
+    // so counting it would flatter the year to date.
+    eligible: (d) => num(priv(d)?.money?.totals?.spend) > 0 && fullMonths(d, plannedMonths(d)).length > 0,
     line: (d) => {
-      const spend = priv(d).money.totals.spend;
-      const plan = sum(plannedMonths(d), "planned");
-      const share = Math.round((spend / plan) * 100);
-      return `Spending ran at ${share}% of the ${formatMoney(plan)} plan${soFar(d)}.`;
+      const done = fullMonths(d, plannedMonths(d));
+      const plan = sum(done, "planned");
+      const share = Math.round((sum(done, "spend") / plan) * 100);
+      return d.is_partial === false
+        ? `Spending ran at ${share}% of the ${formatMoney(plan)} plan.`
+        : `Through ${count(done.length)} full ${plural(done.length, "month")}, spending ran at ${share}% of the ${formatMoney(plan)} plan.`;
     },
   },
   {
@@ -346,11 +377,13 @@ export const PRIVATE_RULES = [
   {
     id: "top-category",
     chapter: "money",
-    eligible: (d) => num(priv(d)?.money?.top_categories?.[0]?.spend) > 0,
+    // Led by the biggest category that is not a fixed bill.
+    eligible: (d) => topFlexibleCategory(d) !== null,
     line: (d) => {
-      const top = priv(d).money.top_categories[0];
+      const top = topFlexibleCategory(d);
       const ofPlan = isNum(top.pct_of_plan) ? `, ${formatPercent(Math.round(top.pct_of_plan))} of its plan` : "";
-      return `${top.category} led spending at ${formatMoney(top.spend)}${ofPlan}.`;
+      const anyFixed = priv(d).money.top_categories.some((c) => num(c.spend) > 0 && isFixedBill(d, c));
+      return `${anyFixed ? "Outside fixed bills, " : ""}${top.category} led spending at ${formatMoney(top.spend)}${ofPlan}.`;
     },
   },
   {
@@ -461,7 +494,7 @@ export const PRIVATE_RULES = [
     chapter: "timeline",
     eligible: (d) => timelineTotals(d).some((m) => m.total > 0),
     line: (d) => {
-      const list = priv(d).timeline;
+      const list = timelineWithoutEpisodes(d);
       const totals = Object.keys(APP_NAMES).map((app) => ({ app, total: sum(list, app) }));
       const top = totals.reduce((a, b) => (b.total > a.total ? b : a));
       const all = sum(totals, "total");

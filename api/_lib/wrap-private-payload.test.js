@@ -45,6 +45,19 @@ describe("toPrivateBlock", () => {
     }
   });
 
+  it("keeps fixed-bill info only as a boolean flag and a list of names", () => {
+    const raw = clone();
+    raw.money.fixed_bill_categories = ["Taxes", " Insurance ", 3, "", { name: "x" }];
+    raw.money.top_categories[0].is_fixed_bill = true;
+    raw.money.top_categories[1].is_fixed_bill = "yes";
+    const out = toPrivateBlock(raw);
+    expect(out.money.fixed_bill_categories).toEqual(["Taxes", "Insurance"]);
+    expect(out.money.top_categories[0].is_fixed_bill).toBe(true);
+    expect("is_fixed_bill" in out.money.top_categories[1]).toBe(false);
+    // Absent upstream, absent here: the sample has neither.
+    expect("fixed_bill_categories" in toPrivateBlock(sample.private).money).toBe(false);
+  });
+
   it("returns null without a version 1 block", () => {
     expect(toPrivateBlock(undefined)).toBeNull();
     expect(toPrivateBlock({ ...clone(), version: 2 })).toBeNull();

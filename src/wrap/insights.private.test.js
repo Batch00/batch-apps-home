@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fixture from "./fixtures/2026.json";
 import fixture2025 from "./fixtures/2025.json";
 import sample from "./fixtures/private/sample.json";
-import { PRIVATE_RULES, insight, insights, isChapterEligible } from "./insights.js";
+import { PRIVATE_RULES, insight, insights, isChapterEligible, isFixedBill, timelineWithoutEpisodes } from "./insights.js";
 
 // The private view's lines, pinned against the synthetic sample (fake numbers) on the public
 // 2026 fixture, the way the page puts them together for the signed-in owner.
@@ -14,9 +14,9 @@ const privateLines = (d) => insights(d).filter((line) => privateIds.has(line.id)
 describe("private lines on the sample", () => {
   it("writes every line from the data", () => {
     expect(Object.fromEntries(privateLines(withPrivate()).map((l) => [l.id, l.text]))).toEqual({
-      "spend-vs-plan": "Spending ran at 97% of the $24,200 plan so far.",
+      "spend-vs-plan": "Through ten full months, spending ran at 99% of the $22,000 plan.",
       "months-under-plan": "Eight of ten full months came in under plan.",
-      "top-category": "Rent led spending at $11,000, 100% of its plan.",
+      "top-category": "Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.",
       "over-plan-categories": "Three categories ran over plan, led by Dining at 133%.",
       "savings-rate": "March saved the most: 36.7% of its income.",
       "net-worth": "Net worth is up $9,000 so far this year, 23% higher.",
@@ -24,8 +24,8 @@ describe("private lines on the sample", () => {
       "trip-per-day": "Sample Trip One was the priciest per day, at $150 a day over twelve days.",
       "top-routine": "Routine A was the go-to routine: 20 of 38 strength sessions.",
       stretching: "Stretching, kept apart from workouts: twelve sessions, 3 hours.",
-      "busiest-app-month": "September was the busiest month across the apps, with 46 logged events.",
-      "top-app": "BatchBurn logged the most: 220 of 378 events so far.",
+      "busiest-app-month": "September was the busiest month across the apps, with 51 logged events.",
+      "top-app": "BatchBurn logged the most: 220 of 374 events so far.",
     });
   });
 
@@ -64,7 +64,7 @@ describe("money rule edges", () => {
     expect(insight(d, "spend-vs-plan")).toBe("Spending ran at 97% of the $24,200 plan.");
     expect(insight(d, "months-under-plan")).toBe("Nine of eleven months came in under plan.");
     expect(insight(d, "net-worth")).toBe("Net worth ended the year up $9,000, 23% higher.");
-    expect(insight(d, "top-app")).toBe("BatchBurn logged the most: 220 of 378 events.");
+    expect(insight(d, "top-app")).toBe("BatchBurn logged the most: 220 of 308 events.");
     for (const { text } of privateLines(d)) expect(text).not.toMatch(/so far/i);
   });
 
@@ -99,8 +99,25 @@ describe("money rule edges", () => {
 
   it("leaves the plan out of the top category line when there is none", () => {
     const d = withPrivate();
-    d.private.money.top_categories[0].pct_of_plan = null;
-    expect(insight(d, "top-category")).toBe("Rent led spending at $11,000.");
+    d.private.money.top_categories[1].pct_of_plan = null;
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300.");
+  });
+
+  it("compares completed months only, never the month in progress against its full plan", () => {
+    const d = withPrivate();
+    // November (as_of 2026-11-22) is in progress: its spend can move freely without changing the line.
+    const november = d.private.money.monthly.find((m) => m.month === 11);
+    for (const spend of [0, 1800, 9999]) {
+      november.spend = spend;
+      expect(insight(d, "spend-vs-plan")).toBe("Through ten full months, spending ran at 99% of the $22,000 plan.");
+    }
+    d.as_of = "2026-03-10";
+    expect(insight(d, "spend-vs-plan")).toBe("Through two full months, spending ran at 93% of the $4,400 plan.");
+    d.as_of = "2026-02-03";
+    expect(insight(d, "spend-vs-plan")).toBe("Through one full month, spending ran at 91% of the $2,200 plan.");
+    // In January no month is complete yet, so the line stays quiet.
+    d.as_of = "2026-01-20";
+    expect(insight(d, "spend-vs-plan")).toBeNull();
   });
 
   it("words a negative savings rate and a falling net worth", () => {
@@ -162,5 +179,64 @@ describe("trip and training rule edges", () => {
     expect(insight(d, "top-routine")).toBeNull();
     d.private.fitness_private.stretch_sessions = null;
     expect(isChapterEligible("training", d)).toBe(false);
+  });
+});
+
+describe("fixed bills in \"where it went\"", () => {
+  it("skips the default fixed bills (Taxes, Insurance, Student Loans) when none are sent", () => {
+    const d = withPrivate();
+    expect(d.private.money.top_categories[0].category).toBe("Insurance");
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.");
+  });
+
+  it("drops the prefix when no listed category is a fixed bill", () => {
+    const d = withPrivate();
+    d.private.money.top_categories[0].category = "Rent";
+    expect(insight(d, "top-category")).toBe("Rent led spending at $11,000, 100% of its plan.");
+  });
+
+  it("follows the payload's fixed-bill list over the defaults", () => {
+    const d = withPrivate();
+    d.private.money.fixed_bill_categories = ["Groceries"];
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Insurance led spending at $11,000, 100% of its plan.");
+    d.private.money.fixed_bill_categories = ["insurance", "GROCERIES"];
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Dining led spending at $2,200, 133% of its plan.");
+  });
+
+  it("follows a per-category flag over everything else", () => {
+    const d = withPrivate();
+    d.private.money.fixed_bill_categories = ["Groceries"];
+    d.private.money.top_categories[0].is_fixed_bill = false;
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Insurance led spending at $11,000, 100% of its plan.");
+    d.private.money.top_categories[0].is_fixed_bill = true;
+    d.private.money.top_categories[1].is_fixed_bill = false;
+    expect(insight(d, "top-category")).toBe("Outside fixed bills, Groceries led spending at $3,300, 110% of its plan.");
+    expect(isFixedBill(d, d.private.money.top_categories[0])).toBe(true);
+    expect(isFixedBill(d, d.private.money.top_categories[1])).toBe(false);
+  });
+
+  it("stays quiet when every category is a fixed bill", () => {
+    const d = withPrivate();
+    d.private.money.top_categories = [{ category: "Taxes", spend: 500, planned: 500, pct_of_plan: 100 }];
+    expect(insight(d, "top-category")).toBeNull();
+  });
+});
+
+describe("timeline without episodes", () => {
+  it("counts BatchFlix as finished titles, so a backfill of episodes cannot skew the busiest month", () => {
+    const d = withPrivate();
+    // A backfill lands hundreds of episodes in June in BatchBrain's batchflix count.
+    d.private.timeline.find((m) => m.month === 6).batchflix = 600;
+    expect(insight(d, "busiest-app-month")).toBe("September was the busiest month across the apps, with 51 logged events.");
+    expect(insight(d, "top-app")).toBe("BatchBurn logged the most: 220 of 374 events so far.");
+  });
+
+  it("takes BatchFlix from the public monthly titles, null where that month has no media data", () => {
+    const d = withPrivate();
+    d.monthly = d.monthly.filter((m) => m.month !== 2);
+    const rows = timelineWithoutEpisodes(d);
+    expect(rows.find((m) => m.month === 1)).toEqual({ month: 1, batchburn: 20, batchflix: 9, batchport: 0 });
+    expect(rows.find((m) => m.month === 2).batchflix).toBeNull();
+    expect(rows.find((m) => m.month === 9)).toEqual({ month: 9, batchburn: 10, batchflix: 11, batchport: 30 });
   });
 });
