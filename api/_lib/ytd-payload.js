@@ -6,8 +6,9 @@
 // rounded to 0.1 degree, and as_of (the refresh date) is the only full date that passes.
 // A new field in BatchBrain stays private until it is added here on purpose.
 
+import { code, int, list, mapList, num, obj, pick, text } from "./allowlist.js";
+
 const AS_OF_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const CODE_PATTERN = /^[A-Z]{2}$/;
 const MEDIA_TYPES = new Set(["movie", "tv"]);
 // A TMDB image path such as "/a1B2c3.jpg": one segment, no host, no query. The page prefixes
 // TMDB's image host itself, so nothing here can point a public image anywhere else.
@@ -34,26 +35,8 @@ const TOTAL_KEYS = [
 
 const MONTHLY_KEYS = ["workouts", "active_hours", "miles_run", "titles", "days_traveled"];
 
-function num(value) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function int(value, min, max) {
-  return Number.isInteger(value) && value >= min && value <= max ? value : null;
-}
-
-function text(value, maxLength) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed && trimmed.length <= maxLength ? trimmed : null;
-}
-
 function posterPath(value) {
   return typeof value === "string" && POSTER_PATTERN.test(value) ? value : null;
-}
-
-function code(value) {
-  return typeof value === "string" && CODE_PATTERN.test(value) ? value : null;
 }
 
 function coord(value, limit) {
@@ -65,25 +48,6 @@ function coord(value, limit) {
 // Two-letter region codes only, each once, in a stable order.
 function codeSet(value) {
   return [...new Set(list(value).filter((c) => code(c) !== null))].sort();
-}
-
-function list(value) {
-  return Array.isArray(value) ? value : [];
-}
-
-function obj(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-
-function pick(source, keys) {
-  const out = {};
-  for (const key of keys) out[key] = num(source[key]);
-  return out;
-}
-
-// Keeps the items whose required field passed; mapper returns null to drop an item.
-function mapList(value, mapper) {
-  return list(value).map((item) => mapper(obj(item))).filter(Boolean);
 }
 
 export function toPublicYtd(raw) {

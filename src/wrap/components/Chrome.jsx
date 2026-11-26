@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { registerProgress } from "../engine/scrollEngine";
+import { OwnerControls } from "../owner/OwnerControls";
+import { useOwner } from "../owner/ownerContext";
 
 // The chapter whose section crosses the middle of the viewport.
 function useActiveChapter(ids) {
@@ -26,9 +28,14 @@ function useActiveChapter(ids) {
   return active;
 }
 
-// Thin page progress line, home link, year state and the current chapter (phones).
+// Thin page progress line, home link, year state and the current chapter (phones), plus the
+// owner controls: a discreet sign-in, or once the owner is signed in, the view badge and toggle.
 export function TopBar({ label, chapters }) {
   const barRef = useRef(null);
+  const owner = useOwner();
+  // Signed in, phones make room for the owner controls: the home link keeps its arrow only and
+  // the year label steps aside.
+  const ownerBar = owner.status === "owner" || owner.status === "unavailable";
   const active = useActiveChapter(chapters.map((c) => c.id));
   const current = chapters.find((c) => c.id === active);
   const pastOpening = Boolean(current && current.id !== chapters[0].id);
@@ -52,17 +59,20 @@ export function TopBar({ label, chapters }) {
           className="flex items-center gap-2 rounded text-caption font-medium text-secondary transition-colors hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           <ArrowLeft size={16} aria-hidden="true" />
-          Batch Apps
+          <span className={ownerBar ? "max-sm:sr-only" : ""}>Batch Apps</span>
         </a>
-        {/* Phones swap the year label for the current chapter once past the opening. */}
-        <p className="text-eyebrow uppercase">
-          <span className={`text-text-primary ${pastOpening ? "hidden md:inline" : ""}`}>{label}</span>
-          {pastOpening && (
-            <span className="text-text-muted md:hidden" aria-hidden="true">
-              {current.label}
-            </span>
-          )}
-        </p>
+        <div className="flex items-center gap-3 sm:gap-5">
+          {/* Phones swap the year label for the current chapter once past the opening. */}
+          <p className={`text-eyebrow uppercase ${ownerBar ? "max-sm:hidden" : ""}`}>
+            <span className={`text-text-primary ${pastOpening ? "hidden md:inline" : ""}`}>{label}</span>
+            {pastOpening && (
+              <span className="text-text-muted md:hidden" aria-hidden="true">
+                {current.label}
+              </span>
+            )}
+          </p>
+          <OwnerControls />
+        </div>
       </div>
     </header>
   );

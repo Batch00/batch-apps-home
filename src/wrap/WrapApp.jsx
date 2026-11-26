@@ -1,13 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ArrowLeft, RotateCw } from "lucide-react";
 import "./wrap.css";
 import { isUsable, loadYtd } from "../lib/ytd";
 import { setReducedMotion } from "./engine/scrollEngine";
 import { useReducedMotion } from "./engine/useReducedMotion";
 import { useBeatNavigation } from "./engine/useBeatNavigation";
-import { chaptersFor } from "./chapters";
+import { CHAPTERS, chaptersFor } from "./chapters";
 import { ChapterRail, TopBar } from "./components/Chrome";
+import { restoreScrollAnchor } from "./engine/scrollAnchor";
 import { yearState } from "./format";
+import { OwnerProvider } from "./owner/OwnerProvider";
+import { SignInDialog } from "./owner/SignInDialog";
+import { useOwner } from "./owner/ownerContext";
+
+const STORY_ORDER = CHAPTERS.map((chapter) => chapter.id);
 
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -18,10 +24,23 @@ function withPreviewState(data) {
   return forced === "final" ? { ...data, is_partial: false } : data;
 }
 
-function Story({ data, reduced }) {
+// The public payload alone, or, in the owner's private view, with the private block added.
+// The public chapters read the same public payload either way.
+function Story({ data: publicData, reduced }) {
+  const owner = useOwner();
+  const data = useMemo(
+    () => (owner.showPrivate ? { ...publicData, private: owner.block } : publicData),
+    [publicData, owner.showPrivate, owner.block],
+  );
   const state = useMemo(() => yearState(data), [data]);
   const chapters = useMemo(() => chaptersFor(data), [data]);
+  const chapterKey = chapters.map((c) => c.id).join(",");
   useBeatNavigation({ chapters, data, reduced });
+
+  // Chapters came or went (the private view turned on or off): put the reader back where they were.
+  useLayoutEffect(() => {
+    restoreScrollAnchor(STORY_ORDER);
+  }, [chapterKey]);
 
   return (
     <>
@@ -76,6 +95,15 @@ function Loading({ year }) {
   );
 }
 
+// Waits for a stored owner session to be checked before the story first shows, so the owner's
+// private view does not rebuild itself under them. Visitors without a session never wait.
+function Content({ year, result, reduced, onRetry }) {
+  const owner = useOwner();
+  if (result.status === "error") return <Unavailable year={year} onRetry={onRetry} />;
+  if (result.status === "loading" || !owner.settled) return <Loading year={year} />;
+  return <Story data={result.data} reduced={reduced} />;
+}
+
 export default function WrapApp({ year }) {
   const [result, setResult] = useState({ status: "loading", data: null });
   const [attempt, setAttempt] = useState(0);
@@ -120,9 +148,10 @@ export default function WrapApp({ year }) {
 
   return (
     <div className="wrap-root min-h-stage bg-background font-sans text-text-primary" data-motion={reduced ? "reduce" : "full"}>
-      {result.status === "ready" && <Story data={result.data} reduced={reduced} />}
-      {result.status === "error" && <Unavailable year={year} onRetry={retry} />}
-      {result.status === "loading" && <Loading year={year} />}
+      <OwnerProvider year={year}>
+        <Content year={year} result={result} reduced={reduced} onRetry={retry} />
+        <SignInDialog />
+      </OwnerProvider>
     </div>
   );
 }

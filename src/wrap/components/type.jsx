@@ -2,7 +2,8 @@ import { pad2 } from "../format";
 
 // Chapter label and the chapter's heading. The number is visual only, so screen readers hear
 // just the label ("Travel").
-export function Eyebrow({ number, children, className = "" }) {
+// tag sits after the label (the private chapters' Private marker).
+export function Eyebrow({ number, children, tag, className = "" }) {
   return (
     <h2 className={`flex items-center gap-3 text-eyebrow uppercase text-text-muted ${className}`}>
       {number != null && (
@@ -12,6 +13,7 @@ export function Eyebrow({ number, children, className = "" }) {
       )}
       {number != null && <span aria-hidden="true" className="h-px w-8 bg-border" />}
       <span>{children}</span>
+      {tag}
     </h2>
   );
 }

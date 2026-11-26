@@ -16,9 +16,11 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - Backend is Vercel serverless functions in `api/` only (shared helpers in `api/_lib/`). No other server.
   - `api/request-access.js`, `approve-request.js`, `deny-request.js`: access requests (Resend email, Supabase admin invite). Approve and Deny links expire after 14 days and are signed per action (`api/_lib/access-token.js`). Opening a link only shows a confirmation page; only its button's POST acts (`api/_lib/access-route.js`). `npm run test:access` (node:test) covers both.
   - `api/ytd.js`: `GET /api/ytd?year=YYYY`, read-only from BatchBrain's `brain.public_ytd` as `site_reader` via `YTD_DATABASE_URL`. Every payload passes the allowlist in `api/_lib/ytd-payload.js`.
-- Auth: Supabase is used only for the invite password-setup overlay in `App.jsx`. No other sign-in yet.
+  - `api/wrap-private.js`: `GET /api/wrap-private?year=YYYY`, owner only. Needs `Authorization: Bearer <Supabase access token>` (never a token in the URL), checked server-side with Supabase `auth.getUser` (`api/_lib/owner-auth.js`) against `OWNER_USER_ID`: 401 without a valid token, 403 for anyone else. Reads `brain.private_wrap` as `wrap_owner_reader` via `WRAP_PRIVATE_DATABASE_URL`; every response is `private, no-store`, and logs carry error codes only. The private block passes its own allowlist (`api/_lib/wrap-private-payload.js`). Rules and tests: `api/_lib/wrap-private-route.js`.
+- Auth: Supabase is used for the invite password-setup overlay in `App.jsx` and the owner sign-in on `/<year>` (`src/wrap/owner/`). Supabase loads lazily in both; public wrap visitors without a stored session never download it.
 - Public data rule: no dollar amounts, trip names, notes, journal text, or dates finer than a month may reach a public payload or page.
 - Never use the Supabase service role key for YTD data; `YTD_DATABASE_URL` connects as `site_reader`, which can read `brain.public_ytd` only.
+- The repo is public: never commit real private data (money, trip names or dates, routines). Tests and local dev use the synthetic `src/wrap/fixtures/private/sample.json` (fake names and numbers), never a response from the live private endpoint.
 
 ## Design System
 - Background: #0a0a0a
@@ -50,7 +52,14 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - Beat navigation (`engine/useBeatNavigation.js`): tap or click the right half for the next beat and the left half for the previous; Right arrow and Space forward, Left arrow and Shift+Space back. Each chapter lists its beat positions in `chapters/index.js` (`stops`); keep them in step with the chapter's Reveal at/out values. Moves are smooth scrolls (instant under reduced motion). Only real interactive elements keep a tap (a, button, input, select, textarea, [role=button], [tabindex]); images, posters, cards and text all navigate.
 - One scroll engine (`engine/scrollEngine.js`) writes `--p` and `--e` on each chapter. For canvas or JS motion use `useChapterProgress` (`engine/progress.js`). Reduced motion pins progress to 1 and flattens the page; `?motion=reduce` forces it, and `?state=final` previews the frozen-year copy in development.
 
+## Private view (owner only, /<year>)
+- A discreet "Owner sign in" (lock in the top bar, a link in the closing chapter) opens an email and password dialog. A non-owner account is told so and signed out. A stored session is checked on load; the page waits up to 4 s for it so the owner's story does not rebuild under them.
+- Signed in as the owner: a "Private view" badge, a one-tap "Public view" toggle (remembered per device in localStorage, `batchwrap:view`) and sign out. The private block stays in memory only.
+- Private chapters (`private: true` in `chapters/index.js`, gated in `CHAPTER_GATES` on `data.private`): Trips (names, dates, trip spend, spend per day, trip spend as a share of budget spend, never added to it), Training (strength by routine, stretching), Money (spend vs plan by month, top categories with percent of plan, savings rate, net worth trend) and Timeline (events by month and app). Their lines are `PRIVATE_RULES` in `insights.js`, tested in `insights.private.test.js` on the sample.
+- The public view must stay exactly the public story: `src/wrap/privacy.test.js` pins the public chapter list, the fixtures, the share pages and home code, and `npm run check:privacy` builds and scans `dist/` (no sample, no private names in the home bundle or share pages).
+- Development: `?private=sample` shows the private view on the synthetic sample without signing in (dev builds only).
+
 ## Deployment
 - Push to `main` triggers auto-deploy on Vercel
 - Domain: batch-apps.com
-- Env vars live in Vercel (see `.env.example` for names). `YTD_DATABASE_URL` is set for Production and Preview.
+- Env vars live in Vercel (see `.env.example` for names). `YTD_DATABASE_URL`, `WRAP_PRIVATE_DATABASE_URL` and `OWNER_USER_ID` are set for Production and Preview.

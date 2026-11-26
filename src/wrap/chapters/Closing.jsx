@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Chapter, Frame } from "../components/Chapter";
 import { Reveal } from "../components/motion";
 import { FIRST_WRAP_YEAR, currentYear, formatAsOf } from "../../lib/ytd";
+import { ClosingOwnerNote, ClosingSignIn } from "../owner/OwnerControls";
 
 export default function Closing({ data, meta, state }) {
   const asOf = formatAsOf(data.as_of);
@@ -34,8 +35,12 @@ export default function Closing({ data, meta, state }) {
               : "The story keeps writing itself until the year is out. The final cut lands in January."}
           </p>
           <p className="mt-10 text-caption text-secondary">
-            {asOf ? `Updated ${asOf}. ` : ""}Trips appear two weeks after they end. Counts only, no amounts.
+            {asOf ? `Updated ${asOf}. ` : ""}
+            {data.private
+              ? "Every trip shows as soon as it starts."
+              : "Trips appear two weeks after they end. Counts only, no amounts."}
           </p>
+          <ClosingOwnerNote />
           {usesTmdb && (
             <p className="mt-3 max-w-xl text-caption text-text-muted">
               Film and TV posters and data from{" "}
@@ -69,6 +74,7 @@ export default function Closing({ data, meta, state }) {
               Back to Batch Apps
             </a>
           </nav>
+          <ClosingSignIn />
         </Reveal>
       </Frame>
     </Chapter>

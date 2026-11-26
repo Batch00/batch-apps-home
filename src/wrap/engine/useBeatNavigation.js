@@ -11,8 +11,9 @@ import { useEffect, useRef } from "react";
 // part of a beat (a poster wall filling a phone screen, say) can trap the reader. Selecting text
 // is left alone too.
 
-const IGNORE_CLICKS = "a, button, input, select, textarea, [role='button'], [tabindex]";
-const IGNORE_KEYS = "a, button, input, select, textarea, [contenteditable]";
+// Dialogs (the owner sign-in) keep every tap and key for themselves too.
+const IGNORE_CLICKS = "a, button, input, select, textarea, [role='button'], [tabindex], dialog";
+const IGNORE_KEYS = "a, button, input, select, textarea, [contenteditable], dialog";
 // Space under the fixed top bar when jumping to a beat on the flattened (reduced motion) page.
 const TOP_BAR = 72;
 // A second tap while a smooth scroll is still running continues from where that scroll is going.

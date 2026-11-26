@@ -1,0 +1,340 @@
+{
+  "_comment": "Synthetic sample data for tests and local development only. Every name, date and number here is made up. Never replace it with real data: the repo is public.",
+  "private": {
+    "version": 1,
+    "money": {
+      "monthly": [
+        {
+          "month": 1,
+          "spend": 2000,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 33.3
+        },
+        {
+          "month": 2,
+          "spend": 2100,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 30
+        },
+        {
+          "month": 3,
+          "spend": 1900,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 36.7
+        },
+        {
+          "month": 4,
+          "spend": 2200,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 26.7
+        },
+        {
+          "month": 5,
+          "spend": 2000,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 33.3
+        },
+        {
+          "month": 6,
+          "spend": 2300,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 23.3
+        },
+        {
+          "month": 7,
+          "spend": 2100,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 30
+        },
+        {
+          "month": 8,
+          "spend": 2000,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 33.3
+        },
+        {
+          "month": 9,
+          "spend": 2900,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 3.3
+        },
+        {
+          "month": 10,
+          "spend": 2200,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 26.7
+        },
+        {
+          "month": 11,
+          "spend": 1800,
+          "planned": 2200,
+          "income": 3000,
+          "savings_rate_pct": 40
+        }
+      ],
+      "top_categories": [
+        {
+          "category": "Rent",
+          "spend": 11000,
+          "planned": 11000,
+          "pct_of_plan": 100
+        },
+        {
+          "category": "Groceries",
+          "spend": 3300,
+          "planned": 3000,
+          "pct_of_plan": 110
+        },
+        {
+          "category": "Dining",
+          "spend": 2200,
+          "planned": 1650,
+          "pct_of_plan": 133.3
+        },
+        {
+          "category": "Transport",
+          "spend": 1100,
+          "planned": 1430,
+          "pct_of_plan": 76.9
+        },
+        {
+          "category": "Travel",
+          "spend": 1300,
+          "planned": 1100,
+          "pct_of_plan": 118.2
+        },
+        {
+          "category": "Utilities",
+          "spend": 1100,
+          "planned": 1100,
+          "pct_of_plan": 100
+        },
+        {
+          "category": "Fun",
+          "spend": 900,
+          "planned": 1100,
+          "pct_of_plan": 81.8
+        },
+        {
+          "category": "Health",
+          "spend": 600,
+          "planned": 770,
+          "pct_of_plan": 77.9
+        }
+      ],
+      "totals": {
+        "spend": 23500,
+        "income": 33000,
+        "savings_rate_pct": 28.8
+      },
+      "net_worth": {
+        "start": 39000,
+        "latest": 48000,
+        "change": 9000,
+        "monthly": [
+          {
+            "month": 1,
+            "value": 40000
+          },
+          {
+            "month": 2,
+            "value": 41000
+          },
+          {
+            "month": 3,
+            "value": 42000
+          },
+          {
+            "month": 4,
+            "value": 41500
+          },
+          {
+            "month": 5,
+            "value": 43000
+          },
+          {
+            "month": 6,
+            "value": 44000
+          },
+          {
+            "month": 7,
+            "value": 45000
+          },
+          {
+            "month": 8,
+            "value": 46000
+          },
+          {
+            "month": 9,
+            "value": 45500
+          },
+          {
+            "month": 10,
+            "value": 47000
+          },
+          {
+            "month": 11,
+            "value": 48000
+          }
+        ]
+      }
+    },
+    "travel_private": {
+      "trips": [
+        {
+          "name": "Sample Trip One",
+          "status": "completed",
+          "start_date": "2026-09-03",
+          "end_date": "2026-09-14",
+          "days": 12,
+          "trip_spend": 1800,
+          "spend_per_day": 150,
+          "countries": [
+            "Country A",
+            "Country B"
+          ],
+          "stops": [
+            {
+              "city": "Sample City A",
+              "country_code": "ZZ",
+              "arrival_date": "2026-09-03",
+              "departure_date": "2026-09-07"
+            },
+            {
+              "city": "Sample City B",
+              "country_code": "ZZ",
+              "arrival_date": "2026-09-07",
+              "departure_date": "2026-09-10"
+            },
+            {
+              "city": "Sample City C",
+              "country_code": "ZY",
+              "arrival_date": "2026-09-10",
+              "departure_date": "2026-09-14"
+            }
+          ]
+        },
+        {
+          "name": "Sample Trip Two",
+          "status": "ongoing",
+          "start_date": "2026-11-20",
+          "end_date": "2026-11-29",
+          "days": 10,
+          "trip_spend": 600,
+          "spend_per_day": 60,
+          "countries": [
+            "Country C"
+          ],
+          "stops": [
+            {
+              "city": "Sample City D",
+              "country_code": "ZX",
+              "arrival_date": "2026-11-20",
+              "departure_date": null
+            }
+          ]
+        }
+      ],
+      "trip_spend_share": 0.1021
+    },
+    "fitness_private": {
+      "stretch_sessions": 12,
+      "stretch_minutes": 180,
+      "strength": [
+        {
+          "routine": "Routine A",
+          "sessions": 20,
+          "minutes": 900
+        },
+        {
+          "routine": "Routine B",
+          "sessions": 14,
+          "minutes": 630
+        },
+        {
+          "routine": null,
+          "sessions": 4,
+          "minutes": 160
+        }
+      ]
+    },
+    "timeline": [
+      {
+        "month": 1,
+        "batchburn": 20,
+        "batchflix": 10,
+        "batchport": 0
+      },
+      {
+        "month": 2,
+        "batchburn": 22,
+        "batchflix": 12,
+        "batchport": 0
+      },
+      {
+        "month": 3,
+        "batchburn": 24,
+        "batchflix": 14,
+        "batchport": 0
+      },
+      {
+        "month": 4,
+        "batchburn": 20,
+        "batchflix": 12,
+        "batchport": 0
+      },
+      {
+        "month": 5,
+        "batchburn": 18,
+        "batchflix": 10,
+        "batchport": 0
+      },
+      {
+        "month": 6,
+        "batchburn": 16,
+        "batchflix": 8,
+        "batchport": 0
+      },
+      {
+        "month": 7,
+        "batchburn": 18,
+        "batchflix": 10,
+        "batchport": 0
+      },
+      {
+        "month": 8,
+        "batchburn": 22,
+        "batchflix": 12,
+        "batchport": 0
+      },
+      {
+        "month": 9,
+        "batchburn": 10,
+        "batchflix": 6,
+        "batchport": 30
+      },
+      {
+        "month": 10,
+        "batchburn": 24,
+        "batchflix": 14,
+        "batchport": 0
+      },
+      {
+        "month": 11,
+        "batchburn": 26,
+        "batchflix": 12,
+        "batchport": 8
+      }
+    ]
+  }
+}

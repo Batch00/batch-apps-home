@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:access": "node --test api/_lib/access-token.node-test.js api/_lib/access-routes.node-test.js"
+    "test:access": "node --test api/_lib/access-token.node-test.js api/_lib/access-routes.node-test.js",
+    "check:privacy": "vite build && node scripts/check-privacy.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.2",

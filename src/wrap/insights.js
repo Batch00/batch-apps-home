@@ -2,14 +2,19 @@
 //
 // Each rule has a chapter, an eligibility check and a line. A rule only speaks when the payload
 // gives it enough to say something true and worth saying; otherwise it stays quiet, and the
-// chapter shows what it has. Rules read the public payload only, so every line is as public as
-// the numbers behind it: counts, months, titles and places, never money or exact dates.
+// chapter shows what it has. Public rules read the public payload only, so every line is as
+// public as the numbers behind it: counts, months, titles and places, never money or exact dates.
+//
+// Private rules (PRIVATE_RULES, the money, trips, training and timeline chapters) read
+// data.private, which only exists in the signed-in owner's private view (api/wrap-private.js).
+// Each one is ineligible without it, so a public payload never produces a private line.
+// Spending is budget_spend; trip spend is only ever compared with it as a share, never added.
 //
 // Chapter gates live here too, so "too thin to show" is decided in one place and tested with
 // the rules.
 
 import { countryName, listOf, newPlaces, stateName } from "../lib/regions.js";
-import { formatNumber, monthName, plural } from "./format.js";
+import { formatMoney, formatNumber, formatPercent, monthName, plural } from "./format.js";
 
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 
@@ -268,10 +273,209 @@ export const RULES = [
   },
 ];
 
+// Private view helpers. The private block, or an empty one, so rules can read it safely.
+function priv(d) {
+  return d?.private && typeof d.private === "object" ? d.private : null;
+}
+
+const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+
+// Months that are over: every month of a final year, else the months before the refresh month,
+// whose figures can still change.
+function fullMonths(d, list) {
+  if (d.is_partial === false) return list;
+  const asOfMonth = Number(/^\d{4}-(\d{2})/.exec(d.as_of ?? "")?.[1]) || 13;
+  return list.filter((m) => m.month < asOfMonth);
+}
+
+function spendMonths(d) {
+  return (priv(d)?.money?.monthly ?? []).filter((m) => m && Number.isInteger(m.month) && isNum(m.spend));
+}
+
+function plannedMonths(d) {
+  return spendMonths(d).filter((m) => num(m.planned) > 0);
+}
+
+function soFar(d) {
+  return d.is_partial === false ? "" : " so far";
+}
+
+const APP_NAMES = { batchburn: "BatchBurn", batchflix: "BatchFlix", batchport: "BatchPort" };
+
+function timelineTotals(d) {
+  return (priv(d)?.timeline ?? [])
+    .filter((m) => m && Number.isInteger(m.month))
+    .map((m) => ({ month: m.month, total: num(m.batchburn) + num(m.batchflix) + num(m.batchport) }));
+}
+
+function strengthSessions(d) {
+  return sum(priv(d)?.fitness_private?.strength ?? [], "sessions");
+}
+
+// A share as a percent for copy: "about 10%", or "under 1%".
+function sharePercent(ratio) {
+  const pct = ratio * 100;
+  return pct < 1 ? "under 1%" : `about ${formatPercent(Math.round(pct))}`;
+}
+
+export const PRIVATE_RULES = [
+  {
+    id: "spend-vs-plan",
+    chapter: "money",
+    eligible: (d) => num(priv(d)?.money?.totals?.spend) > 0 && plannedMonths(d).length > 0,
+    line: (d) => {
+      const spend = priv(d).money.totals.spend;
+      const plan = sum(plannedMonths(d), "planned");
+      const share = Math.round((spend / plan) * 100);
+      return `Spending ran at ${share}% of the ${formatMoney(plan)} plan${soFar(d)}.`;
+    },
+  },
+  {
+    id: "months-under-plan",
+    chapter: "money",
+    eligible: (d) => fullMonths(d, plannedMonths(d)).length >= 3,
+    line: (d) => {
+      const done = fullMonths(d, plannedMonths(d));
+      const under = done.filter((m) => m.spend <= m.planned).length;
+      const span = d.is_partial === false ? "" : " full";
+      if (under === done.length) return `Every${span} month${soFar(d)} came in under plan.`;
+      if (under === 0) return `No${span} month${soFar(d)} came in under plan.`;
+      return `${capitalize(count(under))} of ${count(done.length)}${span} months came in under plan.`;
+    },
+  },
+  {
+    id: "top-category",
+    chapter: "money",
+    eligible: (d) => num(priv(d)?.money?.top_categories?.[0]?.spend) > 0,
+    line: (d) => {
+      const top = priv(d).money.top_categories[0];
+      const ofPlan = isNum(top.pct_of_plan) ? `, ${formatPercent(Math.round(top.pct_of_plan))} of its plan` : "";
+      return `${top.category} led spending at ${formatMoney(top.spend)}${ofPlan}.`;
+    },
+  },
+  {
+    id: "over-plan-categories",
+    chapter: "money",
+    eligible: (d) => (priv(d)?.money?.top_categories ?? []).filter((c) => isNum(c.pct_of_plan)).length >= 2,
+    line: (d) => {
+      const over = priv(d)
+        .money.top_categories.filter((c) => isNum(c.pct_of_plan) && Math.round(c.pct_of_plan) > 100)
+        .sort((a, b) => b.pct_of_plan - a.pct_of_plan);
+      const pct = (c) => formatPercent(Math.round(c.pct_of_plan));
+      if (!over.length) return "Every top category stayed within its plan.";
+      if (over.length === 1) return `Only ${over[0].category} ran over plan, at ${pct(over[0])}.`;
+      if (over.length === 2) return `${over[0].category} (${pct(over[0])}) and ${over[1].category} (${pct(over[1])}) ran over plan.`;
+      return `${capitalize(count(over.length))} categories ran over plan, led by ${over[0].category} at ${pct(over[0])}.`;
+    },
+  },
+  {
+    id: "savings-rate",
+    chapter: "money",
+    eligible: (d) => isNum(priv(d)?.money?.totals?.savings_rate_pct),
+    line: (d) => {
+      const rate = priv(d).money.totals.savings_rate_pct;
+      if (rate < 0) return `Spending ran ahead of income${soFar(d)}: a savings rate of ${formatPercent(rate, 1)}.`;
+      const rated = fullMonths(d, spendMonths(d).filter((m) => isNum(m.savings_rate_pct)));
+      const best = rated.length >= 3 ? rated.reduce((a, b) => (b.savings_rate_pct > a.savings_rate_pct ? b : a)) : null;
+      // The chapter shows the rate itself; the line adds the best month when there is one.
+      return best && best.savings_rate_pct > rate
+        ? `${monthName(best.month)} saved the most: ${formatPercent(best.savings_rate_pct, 1)} of its income.`
+        : `${formatPercent(rate, 1)} of income saved${soFar(d)}.`;
+    },
+  },
+  {
+    id: "net-worth",
+    chapter: "money",
+    eligible: (d) => {
+      const nw = priv(d)?.money?.net_worth;
+      return isNum(nw?.start) && isNum(nw?.latest) && Math.round(nw.latest - nw.start) !== 0;
+    },
+    line: (d) => {
+      const { start, latest } = priv(d).money.net_worth;
+      const change = latest - start;
+      const pct = start > 0 ? `, ${Math.round(Math.abs(change / start) * 100)}% ${change > 0 ? "higher" : "lower"}` : "";
+      const verb = change > 0 ? "up" : "down";
+      return d.is_partial === false
+        ? `Net worth ended the year ${verb} ${formatMoney(Math.abs(change))}${pct}.`
+        : `Net worth is ${verb} ${formatMoney(Math.abs(change))} so far this year${pct}.`;
+    },
+  },
+  {
+    id: "trip-share",
+    chapter: "trips",
+    eligible: (d) => isNum(priv(d)?.travel_private?.trip_spend_share) && priv(d).travel_private.trip_spend_share > 0,
+    line: (d) =>
+      `Trip spending came to ${sharePercent(priv(d).travel_private.trip_spend_share)} of budget spending. It is a share of the same purchases, never added on top.`,
+  },
+  {
+    id: "trip-per-day",
+    chapter: "trips",
+    eligible: (d) => (priv(d)?.travel_private?.trips ?? []).some((t) => num(t.spend_per_day) > 0 && num(t.days) > 0),
+    line: (d) => {
+      const priced = priv(d).travel_private.trips.filter((t) => num(t.spend_per_day) > 0 && num(t.days) > 0);
+      const top = priced.reduce((a, b) => (b.spend_per_day > a.spend_per_day ? b : a));
+      const name = top.name ?? "The trip";
+      const rate = `${formatMoney(top.spend_per_day)} a day over ${count(top.days)} ${plural(top.days, "day")}`;
+      return priced.length === 1 ? `${name} ran ${rate}.` : `${name} was the priciest per day, at ${rate}.`;
+    },
+  },
+  {
+    id: "top-routine",
+    chapter: "training",
+    eligible: (d) => (priv(d)?.fitness_private?.strength ?? []).some((r) => r.routine && num(r.sessions) > 0),
+    line: (d) => {
+      const named = priv(d).fitness_private.strength.filter((r) => r.routine && num(r.sessions) > 0);
+      const top = named.reduce((a, b) => (b.sessions > a.sessions ? b : a));
+      const total = strengthSessions(d);
+      return top.sessions === total
+        ? `${top.routine} was the only routine: ${count(total)} strength ${plural(total, "session")}.`
+        : `${top.routine} was the go-to routine: ${count(top.sessions)} of ${count(total)} strength sessions.`;
+    },
+  },
+  {
+    id: "stretching",
+    chapter: "training",
+    eligible: (d) => num(priv(d)?.fitness_private?.stretch_sessions) > 0,
+    line: (d) => {
+      const { stretch_sessions: sessions, stretch_minutes: minutes } = priv(d).fitness_private;
+      const time =
+        num(minutes) >= 120
+          ? `, ${formatNumber(minutes / 60, 1)} hours`
+          : num(minutes) > 0
+            ? `, ${formatNumber(minutes)} minutes`
+            : "";
+      return `Stretching, kept apart from workouts: ${count(sessions)} ${plural(sessions, "session")}${time}.`;
+    },
+  },
+  {
+    id: "busiest-app-month",
+    chapter: "timeline",
+    eligible: (d) => timelineTotals(d).filter((m) => m.total > 0).length >= 3,
+    line: (d) => {
+      const top = peak(timelineTotals(d), "total");
+      return `${monthName(top.month)} was the busiest month across the apps, with ${formatNumber(top.total)} logged events.`;
+    },
+  },
+  {
+    id: "top-app",
+    chapter: "timeline",
+    eligible: (d) => timelineTotals(d).some((m) => m.total > 0),
+    line: (d) => {
+      const list = priv(d).timeline;
+      const totals = Object.keys(APP_NAMES).map((app) => ({ app, total: sum(list, app) }));
+      const top = totals.reduce((a, b) => (b.total > a.total ? b : a));
+      const all = sum(totals, "total");
+      return `${APP_NAMES[top.app]} logged the most: ${formatNumber(top.total)} of ${formatNumber(all)} events${soFar(d)}.`;
+    },
+  },
+];
+
+const ALL_RULES = [...RULES, ...PRIVATE_RULES];
+
 // Every rule's line that is eligible for this payload, optionally for one chapter.
 export function insights(data, chapter) {
   if (!data?.totals) return [];
-  return RULES.filter((rule) => !chapter || rule.chapter === chapter)
+  return ALL_RULES.filter((rule) => !chapter || rule.chapter === chapter)
     .filter((rule) => {
       try {
         return rule.eligible(data);
@@ -295,6 +499,11 @@ export const CHAPTER_GATES = {
   "film-tv": (d) => num(d.totals?.titles) >= 10,
   patterns: (d) => months(d).length >= 3 && insights(d, "patterns").length > 0,
   closing: () => true,
+  // Private chapters: only with data.private, which only the signed-in owner's view carries.
+  money: (d) => num(priv(d)?.money?.totals?.spend) > 0 && spendMonths(d).length > 0,
+  trips: (d) => (priv(d)?.travel_private?.trips ?? []).length > 0,
+  training: (d) => strengthSessions(d) > 0 || num(priv(d)?.fitness_private?.stretch_sessions) > 0,
+  timeline: (d) => timelineTotals(d).filter((m) => m.total > 0).length >= 2,
 };
 
 export function isChapterEligible(id, data) {
