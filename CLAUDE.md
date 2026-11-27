@@ -39,6 +39,7 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - `src/wrap/fixtures/2026.json` and `2025.json` are real payloads. `npm run dev` has no `/api`, so the home section and the wrap fall back to the matching year's fixture in development only.
 
 ## BatchWrap page (/2026)
+- `/wrap` is the current year's wrap (Chicago time): `main.jsx` swaps the address for `/<year>` before rendering (`wrapAliasTarget` in `src/lib/ytd.js`), and `vercel.json` serves `wrap.html` for it.
 - `main.jsx` checks the path (no router): `/<year>` for 2025 through the current year renders `src/WrapRoute.jsx`, which lazy-loads `src/wrap/WrapApp.jsx`. The home page must never import from `src/wrap/` (check `dist/` after a build).
 - Vercel serves `wrap.html` for `/<year>` (`vercel.json`): the same app as `index.html`, with the wrap's title and share-preview tags (`public/og-wrap.png`, 1200x630). Both are Vite inputs in `vite.config.js`.
 - A finished year (`is_partial` false) speaks in the past tense and hides chapters its data cannot fill. Every year's closing links to all the other years' wraps (2025 through the current year).
@@ -60,7 +61,7 @@ batch-apps.com home page: personal brand and app showcase portfolio.
 - Development: `?private=sample` shows the private view on the synthetic sample without signing in (dev builds only).
 
 ## PWA
-- Installable: `public/manifest.webmanifest` (start_url `/`, standalone, #0a0a0a, a "2026 so far" shortcut to `/2026`: update its year each January), icons in `public/icons/` built from the favicon mark by `python scripts/build-icons.py`, iOS tags in both `index.html` and `wrap.html`.
+- Installable: `public/manifest.webmanifest` (start_url `/`, standalone, #0a0a0a, a "Latest BatchWrap" shortcut to `/wrap`), icons in `public/icons/` built from the favicon mark by `python scripts/build-icons.py`, iOS tags in both `index.html` and `wrap.html`.
 - `public/sw.js` is registered from `main.jsx` in production only. It never touches `/api/*` (network only, so `/api/wrap-private` is never cached), loads pages network first (cache only when offline) and caches hashed `/assets/*`. Bump its `VERSION` to drop every cache.
 
 ## Deployment

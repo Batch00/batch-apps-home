@@ -3,6 +3,8 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/:year(\\d{4})", "destination": "/wrap.html" },
     { "source": "/:year(\\d{4})/", "destination": "/wrap.html" },
+    { "source": "/wrap", "destination": "/wrap.html" },
+    { "source": "/wrap/", "destination": "/wrap.html" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -17,6 +17,12 @@ export function wrapYearFromPath(pathname) {
   return year >= FIRST_WRAP_YEAR && year <= currentYear() ? year : null;
 }
 
+// /wrap (optionally with a trailing slash) always means the current year's wrap, in Chicago
+// time, so links and the app shortcut never need a yearly edit. Returns that /<year> path, else null.
+export function wrapAliasTarget(pathname) {
+  return /^\/wrap\/?$/.test(pathname ?? "") ? `/${currentYear()}` : null;
+}
+
 // as_of is the refresh date (YYYY-MM-DD); format it without a time zone shift.
 export function formatAsOf(asOf) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(asOf ?? "");

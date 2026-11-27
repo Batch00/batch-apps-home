@@ -15,10 +15,10 @@
   ],
   "shortcuts": [
     {
-      "name": "2026 so far",
-      "short_name": "2026",
-      "description": "BatchWrap: the year in data",
-      "url": "/2026",
+      "name": "Latest BatchWrap",
+      "short_name": "BatchWrap",
+      "description": "This year in data",
+      "url": "/wrap",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
